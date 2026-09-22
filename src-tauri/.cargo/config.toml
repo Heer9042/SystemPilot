@@ -1,0 +1,5 @@
+[target.x86_64-pc-windows-msvc]
+linker = "C:\\Program Files\\LLVM\\bin\\lld-link.exe"
+
+[target.x86_64-pc-windows-gnu]
+linker = "C:\\Program Files\\LLVM\\bin\\clang.exe"

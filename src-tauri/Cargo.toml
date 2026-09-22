@@ -1,0 +1,36 @@
+[package]
+name = "systempilot"
+version = "1.0.0"
+description = "SystemPilot - Windows System Management & Performance Suite"
+authors = ["SystemPilot Team"]
+edition = "2021"
+
+[lib]
+name = "systempilot_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sysinfo = "0.31"
+chrono = { version = "0.4", features = ["serde"] }
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+    "Win32_System_SystemInformation",
+    "Win32_System_Memory",
+    "Win32_System_Power",
+    "Win32_System_Registry",
+    "Win32_UI_Shell",
+    "Win32_Security",
+] }
+parking_lot = "0.12"
