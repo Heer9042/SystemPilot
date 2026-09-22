@@ -1,9 +1,11 @@
 name: Release Build & Package
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
+
 
 jobs:
   build-release:

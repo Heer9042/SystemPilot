@@ -1,5 +1,4 @@
-[target.x86_64-pc-windows-msvc]
-linker = "C:\\Program Files\\LLVM\\bin\\lld-link.exe"
-
 [target.x86_64-pc-windows-gnu]
-linker = "C:\\Program Files\\LLVM\\bin\\clang.exe"
+linker = "C:\\Users\\heerp\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\gcc.exe"
+
+
