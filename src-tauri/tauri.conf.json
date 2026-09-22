@@ -29,6 +29,32 @@
     }
   },
   "bundle": {
-    "active": false
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "SystemPilot",
+    "copyright": "Copyright (c) 2026 SystemPilot Contributors",
+    "category": "Utility",
+    "shortDescription": "Windows System Monitoring & Performance Optimization Suite",
+    "longDescription": "SystemPilot is a lightweight, professional Windows system monitoring, memory management, and performance utility.",
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine",
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "icons/128x128.png",
+        "sidebarImage": "icons/128x128.png",
+        "displayLanguageSelector": false,
+        "startMenuFolder": "SystemPilot"
+      },
+      "wix": {
+        "language": "en-US"
+      }
+    }
   }
 }

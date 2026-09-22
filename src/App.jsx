@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar, NAVIGATION_ITEMS } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
+import { FirstRunWizard } from './components/onboarding/FirstRunWizard';
 import { useSystemStats } from './hooks/useSystemStats';
 import { useTheme } from './hooks/useTheme';
 import { api } from './services/tauriApi';
@@ -27,6 +28,21 @@ export function App() {
   const { stats, history, loading, error } = useSystemStats(1000);
   const { theme, toggleTheme } = useTheme();
   const [toast, setToast] = useState(null);
+  const [showFirstRun, setShowFirstRun] = useState(false);
+
+  useEffect(() => {
+    async function checkFirstRun() {
+      try {
+        const settings = await api.getSettings();
+        if (settings && settings.first_run_completed !== 'true') {
+          setShowFirstRun(true);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    checkFirstRun();
+  }, []);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -46,6 +62,15 @@ export function App() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-surface-950 text-slate-100 font-sans">
+      {/* First Run Onboarding Modal */}
+      {showFirstRun && (
+        <FirstRunWizard
+          onComplete={() => setShowFirstRun(false)}
+          currentTheme={theme}
+          toggleTheme={toggleTheme}
+        />
+      )}
+
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
