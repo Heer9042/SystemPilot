@@ -30,10 +30,10 @@ pub fn check_active_game(
     }
 
     let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
-    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    sys.refresh_processes(sysinfo::ProcessesToUpdate::All);
 
     for (_pid, proc_) in sys.processes() {
-        let name = proc_.name().to_lowercase();
+        let name = proc_.name().to_string_lossy().to_lowercase();
         for profile in &enabled_profiles {
             let target = profile.process_name.to_lowercase();
             if name.contains(&target) || target.contains(&name) {
@@ -41,6 +41,7 @@ pub fn check_active_game(
             }
         }
     }
+
 
     Ok(None)
 }

@@ -37,42 +37,47 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 4. Build Tauri Desktop Installer
+# 4. Build Desktop Application Binary
 Write-Host ""
-Write-Host "[3/4] Compiling Rust backend & building Windows Installer (.exe / .msi)..." -ForegroundColor Yellow
-npm run tauri build
+Write-Host "[3/4] Compiling Rust backend & generating SystemPilot executable..." -ForegroundColor Yellow
+$cargoBin = "$env:USERPROFILE\.cargo\bin\cargo.exe"
+& $cargoBin build --manifest-path src-tauri/Cargo.toml
+if ($LASTEXITCODE -eq 0) {
+    New-Item -ItemType Directory -Force -Path "release" | Out-Null
+    Copy-Item "$targetDir\debug\systempilot.exe" -Destination "release\SystemPilot.exe" -Force
+}
 
 # 5. Locate Output Artifacts
 $nsisFolder = "$targetDir\release\bundle\nsis"
 $msiFolder = "$targetDir\release\bundle\msi"
-$localNsisFolder = "src-tauri\target\release\bundle\nsis"
-$localMsiFolder = "src-tauri\target\release\bundle\msi"
+$localReleaseFolder = "release"
 
 Write-Host ""
-Write-Host "[4/4] Verifying generated installers & computing checksums..." -ForegroundColor Yellow
+Write-Host "[4/4] Verifying generated executables & computing checksums..." -ForegroundColor Yellow
 
-$installers = Get-ChildItem -Path "$nsisFolder\*.exe", "$msiFolder\*.msi", "$localNsisFolder\*.exe", "$localMsiFolder\*.msi" -ErrorAction SilentlyContinue
+$executables = Get-ChildItem -Path "$localReleaseFolder\SystemPilot.exe", "$nsisFolder\*.exe", "$msiFolder\*.msi" -ErrorAction SilentlyContinue
 
-if ($installers) {
+if ($executables) {
     Write-Host ""
-    Write-Host "Build Successful! Generated Windows Installers:" -ForegroundColor Green
-    foreach ($file in $installers) {
+    Write-Host "Build Successful! Generated Application Executable:" -ForegroundColor Green
+    foreach ($file in $executables) {
         $hash = (Get-FileHash -Path $file.FullName -Algorithm SHA256).Hash
         Set-Content -Path "$($file.FullName).sha256" -Value "$hash *$($file.Name)"
-        Write-Host "  - File:     $($file.FullName)" -ForegroundColor White
-        Write-Host "    Size:     $([math]::Round($file.Length / 1MB, 2)) MB" -ForegroundColor Gray
-        Write-Host "    SHA-256:  $hash" -ForegroundColor DarkCyan
+        Write-Host "  - Executable: $($file.FullName)" -ForegroundColor White
+        Write-Host "    Size:       $([math]::Round($file.Length / 1MB, 2)) MB" -ForegroundColor Gray
+        Write-Host "    SHA-256:    $hash" -ForegroundColor DarkCyan
     }
 
-    # Open the installer folder in Windows File Explorer
-    $primaryExe = $installers | Where-Object { $_.Extension -eq ".exe" } | Select-Object -First 1
+    # Open the release folder in Windows File Explorer
+    $primaryExe = $executables | Select-Object -First 1
     if ($primaryExe) {
         explorer.exe /select, $primaryExe.FullName
     }
 } else {
     Write-Host ""
-    Write-Host "Installer build completed." -ForegroundColor Gray
+    Write-Host "Build completed." -ForegroundColor Gray
 }
+
 
 Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan

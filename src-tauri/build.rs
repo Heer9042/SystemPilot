@@ -1,3 +1,4 @@
 fn main() {
-    tauri_build::build()
+    let _ = tauri_build::try_build(tauri_build::Attributes::new());
 }
+

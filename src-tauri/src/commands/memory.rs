@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sysinfo::System;
-use std::sync::Mutex;
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DetailedMemoryStats {
@@ -123,14 +122,15 @@ pub fn clean_memory(
         };
 
         let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
-        sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+        sys.refresh_processes(sysinfo::ProcessesToUpdate::All);
 
         for (pid, proc_) in sys.processes() {
             let pid_u32 = pid.as_u32();
             if pid_u32 <= 4 {
                 continue; // Skip system idle & kernel
             }
-            let name = proc_.name().to_lowercase();
+            let name = proc_.name().to_string_lossy().to_lowercase();
+
             // Don't trim critical core processes or SystemPilot itself
             if name.contains("systempilot") || name.contains("csrss") || name.contains("lsass") {
                 continue;

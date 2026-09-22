@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
+use sysinfo::{ProcessRefreshKind, ProcessesToUpdate};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProcessInfo {
@@ -37,7 +37,6 @@ pub fn get_processes(state: tauri::State<'_, super::system::SystemState>) -> Res
     let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
     sys.refresh_processes_specifics(
         ProcessesToUpdate::All,
-        true,
         ProcessRefreshKind::everything(),
     );
 
@@ -45,7 +44,8 @@ pub fn get_processes(state: tauri::State<'_, super::system::SystemState>) -> Res
 
     for (pid, p) in sys.processes() {
         let pid_u32 = pid.as_u32();
-        let name = p.name().to_string();
+        let name = p.name().to_string_lossy().to_string();
+
         let lower_name = name.to_lowercase();
         let is_critical = CRITICAL_PROCESSES.iter().any(|c| lower_name == *c) || pid_u32 <= 4;
         let exe_path = p.exe().map(|path| path.to_string_lossy().to_string()).unwrap_or_default();
@@ -133,15 +133,16 @@ pub fn terminate_process(pid: u32) -> Result<bool, String> {
 
     #[cfg(not(target_os = "windows"))]
     {
-        let mut sys = System::new();
-        sys.refresh_processes(ProcessesToUpdate::All, true);
-        if let Some(proc_) = sys.process(Pid::from_u32(pid)) {
+        let mut sys = sysinfo::System::new();
+        sys.refresh_processes(ProcessesToUpdate::All);
+        if let Some(proc_) = sys.process(sysinfo::Pid::from_u32(pid)) {
             proc_.kill();
             Ok(true)
         } else {
             Err("Process not found".into())
         }
     }
+
 }
 
 #[tauri::command]
