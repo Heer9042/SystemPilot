@@ -183,6 +183,7 @@ pub fn start_cpu_stress(
     duration_seconds: u64,
     state: tauri::State<'_, BenchmarkState>,
 ) -> Result<bool, String> {
+    let safe_duration = duration_seconds.clamp(1, 3600);
     let running = state.is_stress_running.clone();
     if running.load(Ordering::SeqCst) {
         return Ok(true);
@@ -196,7 +197,7 @@ pub fn start_cpu_stress(
         .unwrap_or(4);
 
     std::thread::spawn(move || {
-        let end_time = Instant::now() + std::time::Duration::from_secs(duration_seconds);
+        let end_time = Instant::now() + std::time::Duration::from_secs(safe_duration);
         let mut workers = Vec::new();
 
         for _ in 0..num_threads {

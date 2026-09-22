@@ -81,7 +81,7 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
 pub fn get_security_status() -> Result<SecurityStatus, String> {
     let mut defender = true;
     let mut firewall = true;
-    let mut uac = true;
+    let uac = true;
     let mut warnings = 0usize;
 
     #[cfg(target_os = "windows")]
@@ -99,6 +99,22 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
             let text = String::from_utf8_lossy(&o.stdout);
             if text.contains("\"Enabled\": false") || text.contains("\"Enabled\": 0") {
                 firewall = false;
+                warnings += 1;
+            }
+        }
+
+        let def_out = Command::new("powershell")
+            .args(&[
+                "-NoProfile",
+                "-Command",
+                "try { (Get-MpComputerStatus).RealTimeProtectionEnabled } catch { $true }",
+            ])
+            .output();
+
+        if let Ok(d) = def_out {
+            let def_text = String::from_utf8_lossy(&d.stdout).trim().to_lowercase();
+            if def_text == "false" {
+                defender = false;
                 warnings += 1;
             }
         }

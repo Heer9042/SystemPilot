@@ -178,3 +178,19 @@ pub fn clean_memory(
         message: msg,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_memory_calc_safety() {
+        let ram_before = 8_000_000_000u64;
+        let ram_after = 6_500_000_000u64;
+        let released = ram_before.saturating_sub(ram_after);
+        assert_eq!(released, 1_500_000_000);
+
+        // Edge case: ram_after > ram_before (e.g. background process allocated memory during clean)
+        let ram_after_higher = 9_000_000_000u64;
+        let released_clamped = ram_before.saturating_sub(ram_after_higher);
+        assert_eq!(released_clamped, 0);
+    }
+}

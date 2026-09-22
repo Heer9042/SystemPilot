@@ -105,29 +105,32 @@ impl Database {
 
     fn save_to_disk(&self, state: &DatabaseState) {
         if let Ok(serialized) = serde_json::to_string_pretty(state) {
-            let _ = fs::write(&self.db_path, serialized);
+            let tmp_path = self.db_path.with_extension("tmp");
+            if fs::write(&tmp_path, serialized).is_ok() {
+                let _ = fs::rename(&tmp_path, &self.db_path);
+            }
         }
     }
 
     pub fn get_setting(&self, key: &str) -> Option<String> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         state.settings.get(key).cloned()
     }
 
     pub fn set_setting(&self, key: &str, value: &str) -> Result<(), String> {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         state.settings.insert(key.to_string(), value.to_string());
         self.save_to_disk(&state);
         Ok(())
     }
 
     pub fn get_all_settings(&self) -> Result<HashMap<String, String>, String> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         Ok(state.settings.clone())
     }
 
     pub fn add_cleanup_log(&self, bytes: u64, categories: &str, success: bool) -> Result<(), String> {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         state.next_id += 1;
         let id = state.next_id;
         let now = chrono::Local::now().to_rfc3339();
@@ -141,18 +144,21 @@ impl Database {
                 success,
             },
         );
+        if state.cleanup_history.len() > 500 {
+            state.cleanup_history.truncate(500);
+        }
         self.save_to_disk(&state);
         Ok(())
     }
 
     pub fn get_cleanup_history(&self, limit: usize) -> Result<Vec<CleanupLog>, String> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         let logs: Vec<CleanupLog> = state.cleanup_history.iter().take(limit).cloned().collect();
         Ok(logs)
     }
 
     pub fn add_benchmark_log(&self, test_type: &str, score: f64, duration_ms: u64, details: &str) -> Result<(), String> {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         state.next_id += 1;
         let id = state.next_id;
         let now = chrono::Local::now().to_rfc3339();
@@ -167,23 +173,27 @@ impl Database {
                 details: details.to_string(),
             },
         );
+        if state.benchmark_history.len() > 500 {
+            state.benchmark_history.truncate(500);
+        }
         self.save_to_disk(&state);
         Ok(())
     }
 
+
     pub fn get_benchmark_history(&self, limit: usize) -> Result<Vec<BenchmarkLog>, String> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         let logs: Vec<BenchmarkLog> = state.benchmark_history.iter().take(limit).cloned().collect();
         Ok(logs)
     }
 
     pub fn get_gaming_profiles(&self) -> Result<Vec<GamingProfile>, String> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         Ok(state.gaming_profiles.clone())
     }
 
     pub fn save_gaming_profile(&self, profile: &GamingProfile) -> Result<(), String> {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(id) = profile.id {
             if let Some(existing) = state.gaming_profiles.iter_mut().find(|p| p.id == Some(id)) {
                 *existing = profile.clone();
@@ -199,9 +209,48 @@ impl Database {
     }
 
     pub fn delete_gaming_profile(&self, id: i64) -> Result<(), String> {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         state.gaming_profiles.retain(|p| p.id != Some(id));
         self.save_to_disk(&state);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_db_init_and_settings() {
+        let temp_dir = std::env::temp_dir();
+        let db_path = temp_dir.join(format!("test_systempilot_db_{}.json", chrono::Local::now().timestamp_nanos_opt().unwrap_or(0)));
+        let db = Database::init(db_path.clone()).expect("Failed to init test db");
+
+        assert_eq!(db.get_setting("theme"), Some("dark".to_string()));
+        db.set_setting("theme", "light").expect("Failed to set setting");
+        assert_eq!(db.get_setting("theme"), Some("light".to_string()));
+
+        // Re-read from disk
+        let db_reopened = Database::init(db_path.clone()).expect("Failed to reopen test db");
+        assert_eq!(db_reopened.get_setting("theme"), Some("light".to_string()));
+
+        let _ = fs::remove_file(&db_path);
+    }
+
+    #[test]
+    fn test_cleanup_log_history_limit() {
+        let temp_dir = std::env::temp_dir();
+        let db_path = temp_dir.join(format!("test_cleanup_history_{}.json", chrono::Local::now().timestamp_nanos_opt().unwrap_or(0)));
+        let db = Database::init(db_path.clone()).expect("Failed to init test db");
+
+        for i in 0..10 {
+            db.add_cleanup_log(1024 * i, "temp,logs", true).unwrap();
+        }
+
+        let history = db.get_cleanup_history(5).unwrap();
+        assert_eq!(history.len(), 5);
+        assert_eq!(history[0].bytes_cleaned, 1024 * 9);
+
+        let _ = fs::remove_file(&db_path);
     }
 }

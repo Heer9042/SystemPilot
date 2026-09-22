@@ -70,8 +70,25 @@ pub fn get_system_stats(state: tauri::State<'_, SystemState>) -> Result<SystemSt
     sys.refresh_cpu_all();
     sys.refresh_memory();
 
-    let cpu_usage = sys.global_cpu_usage();
-    let cpu_cores: Vec<f32> = sys.cpus().iter().map(|c| c.cpu_usage()).collect();
+    let raw_cpu = sys.global_cpu_usage();
+    let cpu_usage = if raw_cpu.is_nan() || raw_cpu.is_infinite() {
+        0.0
+    } else {
+        raw_cpu.clamp(0.0, 100.0)
+    };
+
+    let cpu_cores: Vec<f32> = sys
+        .cpus()
+        .iter()
+        .map(|c| {
+            let u = c.cpu_usage();
+            if u.is_nan() || u.is_infinite() {
+                0.0
+            } else {
+                u.clamp(0.0, 100.0)
+            }
+        })
+        .collect();
     let cpu_freq_mhz = sys.cpus().first().map(|c| c.frequency()).unwrap_or(0);
     let cpu_name = sys.cpus().first().map(|c| c.brand().to_string()).unwrap_or_else(|| "Unknown CPU".into());
 
@@ -79,10 +96,15 @@ pub fn get_system_stats(state: tauri::State<'_, SystemState>) -> Result<SystemSt
     let ram_used = sys.used_memory();
     let ram_free = sys.free_memory();
     let ram_available = sys.available_memory();
-    let ram_pct = if ram_total > 0 {
+    let raw_ram_pct = if ram_total > 0 {
         (ram_used as f32 / ram_total as f32) * 100.0
     } else {
         0.0
+    };
+    let ram_pct = if raw_ram_pct.is_nan() || raw_ram_pct.is_infinite() {
+        0.0
+    } else {
+        raw_ram_pct.clamp(0.0, 100.0)
     };
 
     let swap_total = sys.total_swap();

@@ -174,8 +174,31 @@ pub fn execute_cleanup(
             let (c, b) = clean_dir(&PathBuf::from("C:\\Windows\\Temp"));
             cleaned_files += c;
             cleaned_bytes += b;
+        } else if id == "thumb_cache" {
+            if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
+                let thumb_path = PathBuf::from(&local_app_data).join("Microsoft\\Windows\\Explorer");
+                if thumb_path.exists() {
+                    if let Ok(entries) = fs::read_dir(&thumb_path) {
+                        for e in entries.flatten() {
+                            if let Ok(name) = e.file_name().into_string() {
+                                if name.starts_with("thumbcache_") && name.ends_with(".db") {
+                                    let p = e.path();
+                                    if let Ok(meta) = e.metadata() {
+                                        let len = meta.len();
+                                        if fs::remove_file(&p).is_ok() {
+                                            cleaned_files += 1;
+                                            cleaned_bytes += len;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+
 
     if empty_recycle_bin {
         #[cfg(target_os = "windows")]
