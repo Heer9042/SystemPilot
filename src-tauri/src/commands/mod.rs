@@ -9,6 +9,7 @@ pub mod power;
 pub mod processes;
 pub mod startup;
 pub mod system;
+pub mod updates;
 
 use crate::db::Database;
 use std::collections::HashMap;

@@ -2,11 +2,18 @@
   "name": "systempilot",
   "private": true,
   "version": "0.0.2",
+  "license": "MIT",
+  "author": "SystemPilot Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Heer9042/SystemPilot.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "preview": "npm --prefix frontend run preview",
+    "test": "node scripts/test_version.js",
     "tauri": "tauri"
   },
   "devDependencies": {

@@ -76,6 +76,9 @@ pub fn run() {
             commands::window_minimize,
             commands::window_toggle_maximize,
             commands::window_close,
+            // Updates & Versioning
+            commands::updates::get_app_version,
+            commands::updates::open_release_notes,
         ])
         .setup(|app| {
             // Setup background monitoring thread for Auto RAM clean

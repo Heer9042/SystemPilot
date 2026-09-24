@@ -3,6 +3,8 @@ name = "systempilot"
 version = "0.0.2"
 description = "SystemPilot - Windows System Management & Performance Suite"
 authors = ["SystemPilot Team"]
+license = "MIT"
+repository = "https://github.com/Heer9042/SystemPilot"
 edition = "2021"
 
 [lib]

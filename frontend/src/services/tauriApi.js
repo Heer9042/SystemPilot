@@ -235,4 +235,25 @@ export const api = {
       console.warn('Window close fallback failed:', e);
     }
   },
+
+  async getAppVersion() {
+    const inv = await getInvoke();
+    if (inv) return await inv('get_app_version');
+    return {
+      name: 'SystemPilot',
+      version: '0.0.2',
+      target_arch: 'x64',
+      target_os: 'windows',
+      git_repository: 'Heer9042/SystemPilot',
+      release_url: 'https://github.com/Heer9042/SystemPilot/releases',
+    };
+  },
+
+  async openReleaseNotes(url) {
+    const inv = await getInvoke();
+    if (inv) return await inv('open_release_notes', { url });
+    if (typeof window !== 'undefined' && url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  },
 };

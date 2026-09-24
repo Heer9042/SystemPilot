@@ -2,6 +2,8 @@
   "name": "systempilot-frontend",
   "private": true,
   "version": "0.0.2",
+  "license": "MIT",
+  "author": "SystemPilot Contributors",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -35,6 +35,40 @@ jobs:
         with:
           workspaces: src-tauri
 
+      - name: Verify Version Consistency
+        shell: powershell
+        run: |
+          $ref = "${{ github.ref }}"
+          if ($ref -like "refs/tags/v*") {
+            $tagVer = $ref -replace "refs/tags/v", ""
+            Write-Host "Verifying tag version: $tagVer"
+            
+            # Check package.json
+            $pkg = Get-Content "package.json" | ConvertFrom-Json
+            if ($pkg.version -ne $tagVer) {
+              Write-Error "Version mismatch: package.json has $($pkg.version) but tag is $tagVer"
+              exit 1
+            }
+            
+            # Check frontend/package.json
+            $frontPkg = Get-Content "frontend/package.json" | ConvertFrom-Json
+            if ($frontPkg.version -ne $tagVer) {
+              Write-Error "Version mismatch: frontend/package.json has $($frontPkg.version) but tag is $tagVer"
+              exit 1
+            }
+            
+            # Check tauri.conf.json
+            $tauriConf = Get-Content "src-tauri/tauri.conf.json" | ConvertFrom-Json
+            if ($tauriConf.version -ne $tagVer) {
+              Write-Error "Version mismatch: tauri.conf.json has $($tauriConf.version) but tag is $tagVer"
+              exit 1
+            }
+            
+            Write-Host "[OK] All versions match tag: v$tagVer"
+          } else {
+            Write-Host "Manual trigger or non-tag push; skipping strict tag version check."
+          }
+
       - name: Build Tauri Packages (EXE & MSI)
         run: npm run tauri build
 

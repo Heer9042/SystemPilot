@@ -3,8 +3,11 @@ import { Sidebar, NAVIGATION_ITEMS } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { FirstRunWizard } from './components/onboarding/FirstRunWizard';
 import { PageLoading } from './components/common/PageLoading';
+import { UpdateModal } from './components/updates/UpdateModal';
+import { UpdateBanner } from './components/updates/UpdateBanner';
 import { useSystemStats } from './hooks/useSystemStats';
 import { useTheme } from './hooks/useTheme';
+import { useUpdater } from './hooks/useUpdater';
 import { api } from './services/tauriApi';
 
 // Dashboard loaded directly for instant initial rendering
@@ -31,6 +34,23 @@ export function App() {
   const { theme, toggleTheme } = useTheme();
   const [toast, setToast] = useState(null);
   const [showFirstRun, setShowFirstRun] = useState(false);
+
+  const {
+    status,
+    currentVersion,
+    latestRelease,
+    error: updaterError,
+    progress: updaterProgress,
+    modalOpen,
+    bannerVisible,
+    checkForUpdates,
+    downloadAndInstallUpdate,
+    dismissUpdate,
+    skipVersion,
+    openReleaseNotes,
+    openModal,
+    closeModal,
+  } = useUpdater();
 
   useEffect(() => {
     async function checkFirstRun() {
@@ -73,6 +93,22 @@ export function App() {
         />
       )}
 
+      {/* Global In-App Update Modal */}
+      <UpdateModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        status={status}
+        currentVersion={currentVersion}
+        latestRelease={latestRelease}
+        error={updaterError}
+        progress={updaterProgress}
+        onUpdateNow={downloadAndInstallUpdate}
+        onLater={dismissUpdate}
+        onSkipVersion={skipVersion}
+        onCheckAgain={() => checkForUpdates({ isManual: true })}
+        onOpenReleaseNotes={openReleaseNotes}
+      />
+
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
@@ -91,6 +127,16 @@ export function App() {
           onRefresh={() => {}}
           activeTabTitle={activeNav?.label || 'Dashboard'}
         />
+
+        {/* Non-intrusive Update Notification Banner (Hidden during onboarding) */}
+        {!showFirstRun && bannerVisible && latestRelease && (
+          <UpdateBanner
+            latestVersion={latestRelease.version}
+            onOpenModal={openModal}
+            onUpdateNow={downloadAndInstallUpdate}
+            onDismiss={dismissUpdate}
+          />
+        )}
 
         {/* Dynamic Toast Notification */}
         {toast && (
