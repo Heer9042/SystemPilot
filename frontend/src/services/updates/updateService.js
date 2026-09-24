@@ -14,7 +14,7 @@ class UpdateService {
   constructor() {
     this.state = {
       status: UpdateStatus.IDLE,
-      currentVersion: '0.0.2',
+      currentVersion: '0.0.3',
       latestRelease: null,
       error: null,
       progress: null,
