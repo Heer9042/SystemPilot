@@ -20,10 +20,14 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
-        // Query wmic/powershell for video controllers safely
+        use std::os::windows::process::CommandExt;
+        // Query wmic/powershell for video controllers safely without popup terminal
         let output = Command::new("powershell")
+            .creation_flags(0x08000000)
             .args(&[
                 "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle", "Hidden",
                 "-Command",
                 "Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM | ConvertTo-Json",
             ])

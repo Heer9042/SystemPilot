@@ -1,6 +1,6 @@
 [package]
 name = "systempilot"
-version = "1.0.0"
+version = "0.0.2"
 description = "SystemPilot - Windows System Management & Performance Suite"
 authors = ["SystemPilot Team"]
 edition = "2021"

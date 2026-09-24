@@ -33,9 +33,13 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
+        use std::os::windows::process::CommandExt;
         let output = Command::new("powershell")
+            .creation_flags(0x08000000)
             .args(&[
                 "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle", "Hidden",
                 "-Command",
                 "Get-CimInstance Win32_BaseBoard | Select-Object Manufacturer, Product | ConvertTo-Json",
             ])
@@ -54,8 +58,11 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
         }
 
         let bios_out = Command::new("powershell")
+            .creation_flags(0x08000000)
             .args(&[
                 "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle", "Hidden",
                 "-Command",
                 "Get-CimInstance Win32_BIOS | Select-Object Manufacturer, SMBIOSBIOSVersion | ConvertTo-Json",
             ])
@@ -87,9 +94,13 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
+        use std::os::windows::process::CommandExt;
         let out = Command::new("powershell")
+            .creation_flags(0x08000000)
             .args(&[
                 "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle", "Hidden",
                 "-Command",
                 "Get-NetFirewallProfile | Select-Object Name, Enabled | ConvertTo-Json",
             ])
@@ -104,8 +115,11 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
         }
 
         let def_out = Command::new("powershell")
+            .creation_flags(0x08000000)
             .args(&[
                 "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle", "Hidden",
                 "-Command",
                 "try { (Get-MpComputerStatus).RealTimeProtectionEnabled } catch { $true }",
             ])

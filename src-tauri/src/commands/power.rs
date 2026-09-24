@@ -12,7 +12,9 @@ pub fn get_power_plans() -> Result<Vec<PowerPlanInfo>, String> {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
+        use std::os::windows::process::CommandExt;
         let output = Command::new("powercfg")
+            .creation_flags(0x08000000)
             .args(&["/list"])
             .output()
             .map_err(|e| e.to_string())?;
@@ -93,7 +95,9 @@ pub fn set_power_plan(guid: String) -> Result<bool, String> {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
+        use std::os::windows::process::CommandExt;
         let status = Command::new("powercfg")
+            .creation_flags(0x08000000)
             .args(&["/setactive", clean_guid])
             .status()
             .map_err(|e| e.to_string())?;

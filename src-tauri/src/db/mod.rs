@@ -24,17 +24,6 @@ pub struct BenchmarkLog {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GamingProfile {
-    pub id: Option<i64>,
-    pub name: String,
-    pub process_name: String,
-    pub power_mode: String,
-    pub auto_clean_ram: bool,
-    pub deprioritize_background: bool,
-    pub enabled: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AlertLog {
     pub id: Option<i64>,
     pub timestamp: String,
@@ -48,7 +37,6 @@ struct DatabaseState {
     pub settings: HashMap<String, String>,
     pub cleanup_history: Vec<CleanupLog>,
     pub benchmark_history: Vec<BenchmarkLog>,
-    pub gaming_profiles: Vec<GamingProfile>,
     pub alerts_log: Vec<AlertLog>,
     pub next_id: i64,
 }
@@ -90,7 +78,6 @@ impl Database {
                     }
                     initial_state.cleanup_history = saved_state.cleanup_history;
                     initial_state.benchmark_history = saved_state.benchmark_history;
-                    initial_state.gaming_profiles = saved_state.gaming_profiles;
                     initial_state.alerts_log = saved_state.alerts_log;
                     initial_state.next_id = saved_state.next_id;
                 }
@@ -185,34 +172,6 @@ impl Database {
         let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         let logs: Vec<BenchmarkLog> = state.benchmark_history.iter().take(limit).cloned().collect();
         Ok(logs)
-    }
-
-    pub fn get_gaming_profiles(&self) -> Result<Vec<GamingProfile>, String> {
-        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
-        Ok(state.gaming_profiles.clone())
-    }
-
-    pub fn save_gaming_profile(&self, profile: &GamingProfile) -> Result<(), String> {
-        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(id) = profile.id {
-            if let Some(existing) = state.gaming_profiles.iter_mut().find(|p| p.id == Some(id)) {
-                *existing = profile.clone();
-            }
-        } else {
-            state.next_id += 1;
-            let mut new_profile = profile.clone();
-            new_profile.id = Some(state.next_id);
-            state.gaming_profiles.push(new_profile);
-        }
-        self.save_to_disk(&state);
-        Ok(())
-    }
-
-    pub fn delete_gaming_profile(&self, id: i64) -> Result<(), String> {
-        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
-        state.gaming_profiles.retain(|p| p.id != Some(id));
-        self.save_to_disk(&state);
-        Ok(())
     }
 }
 

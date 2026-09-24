@@ -1,5 +1,13 @@
 pub mod commands;
+pub mod config;
+pub mod database;
 pub mod db;
+pub mod errors;
+pub mod logging;
+pub mod monitoring;
+pub mod system;
+pub mod tray;
+pub mod windows;
 
 use std::path::PathBuf;
 use tauri::Manager;
@@ -43,13 +51,9 @@ pub fn run() {
             // Disk & Network
             commands::disk_net::get_disk_details,
             commands::disk_net::get_network_details,
-            // Power & Gaming
+            // Power
             commands::power::get_power_plans,
             commands::power::set_power_plan,
-            commands::gaming::get_gaming_profiles,
-            commands::gaming::save_gaming_profile,
-            commands::gaming::delete_gaming_profile,
-            commands::gaming::check_active_game,
             // Startup & Cleanup
             commands::startup::get_startup_items,
             commands::cleanup::scan_cleanable_items,
@@ -68,6 +72,10 @@ pub fn run() {
             // Settings
             commands::get_settings,
             commands::set_setting,
+            // Window Controls
+            commands::window_minimize,
+            commands::window_toggle_maximize,
+            commands::window_close,
         ])
         .setup(|app| {
             // Setup background monitoring thread for Auto RAM clean

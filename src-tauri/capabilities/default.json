@@ -2,9 +2,11 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default permissions for SystemPilot desktop application",
-  "windows": ["main"],
+  "windows": ["*"],
   "permissions": [
     "core:default",
+    "core:window:default",
+    "core:event:default",
     "shell:default",
     "notification:default",
     "autostart:default",
