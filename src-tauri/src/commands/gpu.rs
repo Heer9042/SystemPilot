@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GpuInfo {
@@ -13,91 +14,86 @@ pub struct GpuInfo {
     pub is_primary: bool,
 }
 
+static GPU_CACHE: Mutex<Option<Vec<GpuInfo>>> = Mutex::new(None);
+
 #[tauri::command]
 pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
+    // Check cache first for fast 0ms return
+    if let Ok(guard) = GPU_CACHE.lock() {
+        if let Some(ref cached) = *guard {
+            if !cached.is_empty() {
+                return Ok(cached.clone());
+            }
+        }
+    }
+
     let mut gpus = Vec::new();
 
     #[cfg(target_os = "windows")]
     {
-        use std::process::Command;
-        use std::os::windows::process::CommandExt;
-        // Query wmic/powershell for video controllers safely without popup terminal
-        let output = Command::new("powershell")
-            .creation_flags(0x08000000)
-            .args(&[
-                "-NoProfile",
-                "-NonInteractive",
-                "-WindowStyle", "Hidden",
-                "-Command",
-                "Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM | ConvertTo-Json",
-            ])
-            .output();
+        use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
+        use crate::windows::registry::{enum_subkeys, get_reg_qword, get_reg_string};
 
-        if let Ok(out) = output {
-            let json_str = String::from_utf8_lossy(&out.stdout);
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&json_str) {
-                if val.is_array() {
-                    for item in val.as_array().unwrap() {
-                        let name = item["Name"].as_str().unwrap_or("Unknown GPU").to_string();
-                        let driver = item["DriverVersion"].as_str().unwrap_or("").to_string();
-                        let ram = item["AdapterRAM"].as_u64().unwrap_or(0);
-                        let vendor = if name.to_lowercase().contains("nvidia") {
-                            "NVIDIA".into()
-                        } else if name.to_lowercase().contains("amd") || name.to_lowercase().contains("radeon") {
-                            "AMD".into()
-                        } else if name.to_lowercase().contains("intel") {
-                            "Intel".into()
-                        } else {
-                            "Generic".into()
-                        };
+        let video_class = "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
+        let subkeys = enum_subkeys(HKEY_LOCAL_MACHINE, video_class);
 
-                        gpus.push(GpuInfo {
-                            name,
-                            vendor,
-                            driver_version: driver,
-                            dedicated_memory_bytes: ram,
-                            shared_memory_bytes: 0,
-                            utilization_percent: None,
-                            memory_utilization_percent: None,
-                            temperature_celsius: None,
-                            is_primary: gpus.is_empty(),
-                        });
-                    }
-                } else if val.is_object() {
-                    let name = val["Name"].as_str().unwrap_or("Unknown GPU").to_string();
-                    let driver = val["DriverVersion"].as_str().unwrap_or("").to_string();
-                    let ram = val["AdapterRAM"].as_u64().unwrap_or(0);
-                    let vendor = if name.to_lowercase().contains("nvidia") {
-                        "NVIDIA".into()
-                    } else if name.to_lowercase().contains("amd") || name.to_lowercase().contains("radeon") {
-                        "AMD".into()
-                    } else if name.to_lowercase().contains("intel") {
-                        "Intel".into()
-                    } else {
-                        "Generic".into()
-                    };
+        for sub in subkeys {
+            if sub.chars().all(|c| c.is_ascii_digit()) {
+                let adapter_key = format!("{}\\{}", video_class, sub);
 
-                    gpus.push(GpuInfo {
-                        name,
-                        vendor,
-                        driver_version: driver,
-                        dedicated_memory_bytes: ram,
-                        shared_memory_bytes: 0,
-                        utilization_percent: None,
-                        memory_utilization_percent: None,
-                        temperature_celsius: None,
-                        is_primary: true,
-                    });
+                let name = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "DriverDesc")
+                    .or_else(|| get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "AdapterString"))
+                    .unwrap_or_default();
+
+                if name.is_empty() || name.to_lowercase().contains("remote") || name.to_lowercase().contains("mirror") {
+                    continue;
                 }
+
+                let driver = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "DriverVersion")
+                    .unwrap_or_else(|| "WDDM Standard".into());
+
+                let ram = get_reg_qword(HKEY_LOCAL_MACHINE, &adapter_key, "HardwareInformation.qwMemorySize")
+                    .or_else(|| get_reg_qword(HKEY_LOCAL_MACHINE, &adapter_key, "HardwareInformation.MemorySize"))
+                    .unwrap_or(0);
+
+                let provider = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "ProviderName")
+                    .unwrap_or_default();
+
+                let lower_name = name.to_lowercase();
+                let lower_prov = provider.to_lowercase();
+
+                let vendor = if lower_name.contains("nvidia") || lower_prov.contains("nvidia") {
+                    "NVIDIA".into()
+                } else if lower_name.contains("amd") || lower_name.contains("radeon") || lower_prov.contains("advanced micro") {
+                    "AMD".into()
+                } else if lower_name.contains("intel") || lower_prov.contains("intel") {
+                    "Intel".into()
+                } else {
+                    "DirectX Adapter".into()
+                };
+
+                let is_primary = gpus.is_empty();
+
+                gpus.push(GpuInfo {
+                    name,
+                    vendor,
+                    driver_version: driver,
+                    dedicated_memory_bytes: ram,
+                    shared_memory_bytes: 0,
+                    utilization_percent: None,
+                    memory_utilization_percent: None,
+                    temperature_celsius: None,
+                    is_primary,
+                });
             }
         }
     }
 
     if gpus.is_empty() {
         gpus.push(GpuInfo {
-            name: "Standard Display Controller".into(),
+            name: "DirectX Graphics Adapter".into(),
             vendor: "Standard".into(),
-            driver_version: "".into(),
+            driver_version: "WDDM 3.0".into(),
             dedicated_memory_bytes: 0,
             shared_memory_bytes: 0,
             utilization_percent: None,
@@ -105,6 +101,11 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
             temperature_celsius: None,
             is_primary: true,
         });
+    }
+
+    // Store in cache
+    if let Ok(mut guard) = GPU_CACHE.lock() {
+        *guard = Some(gpus.clone());
     }
 
     Ok(gpus)

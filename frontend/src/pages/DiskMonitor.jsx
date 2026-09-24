@@ -8,18 +8,24 @@ import { HardDrive, Server, ShieldCheck } from 'lucide-react';
 
 export function DiskMonitor({ stats }) {
   const [disks, setDisks] = useState([]);
+  const isFetchingRef = React.useRef(false);
+
+  const fetchDisks = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const list = await api.getDiskDetails();
+      setDisks(list || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      isFetchingRef.current = false;
+    }
+  };
 
   useEffect(() => {
-    async function fetchDisks() {
-      try {
-        const list = await api.getDiskDetails();
-        setDisks(list || []);
-      } catch (e) {
-        console.error(e);
-      }
-    }
     fetchDisks();
-    const interval = setInterval(fetchDisks, 3000);
+    const interval = setInterval(fetchDisks, 4000);
     return () => clearInterval(interval);
   }, []);
 

@@ -27,21 +27,27 @@ export function Processes() {
   const [priorityModal, setPriorityModal] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState('Normal');
   const [statusMessage, setStatusMessage] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  const isFetchingRef = React.useRef(false);
 
   const fetchProcesses = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const list = await api.getProcesses();
       setProcesses(list || []);
     } catch (err) {
       console.error(err);
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchProcesses();
-    const timer = setInterval(fetchProcesses, 2000);
+    const timer = setInterval(fetchProcesses, 2500);
     return () => clearInterval(timer);
   }, []);
 
@@ -52,6 +58,7 @@ export function Processes() {
       setSortField(field);
       setSortAsc(false);
     }
+    setCurrentPage(1);
   };
 
   const filteredProcesses = useMemo(() => {
@@ -73,6 +80,17 @@ export function Processes() {
         return sortAsc ? valA - valB : valB - valA;
       });
   }, [processes, search, sortField, sortAsc]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProcesses.length / pageSize));
+  const paginatedProcesses = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProcesses.slice(start, start + pageSize);
+  }, [filteredProcesses, currentPage, pageSize]);
+
+  // Reset page to 1 if search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const handleTerminate = async (pid, isCritical) => {
     if (isCritical) {
@@ -200,7 +218,7 @@ export function Processes() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800/60 font-mono">
-              {filteredProcesses.map((p) => (
+              {paginatedProcesses.map((p) => (
                 <tr
                   key={p.pid}
                   className="hover:bg-slate-50 dark:hover:bg-surface-800/40 transition group text-slate-700 dark:text-slate-300"
@@ -266,6 +284,37 @@ export function Processes() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="p-3 bg-slate-50 dark:bg-surface-900/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>
+              Showing {Math.min((currentPage - 1) * pageSize + 1, filteredProcesses.length)} to{' '}
+              {Math.min(currentPage * pageSize, filteredProcesses.length)} of {filteredProcesses.length} processes
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Priority Modal */}

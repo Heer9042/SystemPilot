@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DetailedMemoryStats {
     pub total_ram: u64,
@@ -31,14 +30,16 @@ pub struct CleanMemoryResult {
 
 #[tauri::command]
 pub fn get_detailed_memory_stats(state: tauri::State<'_, super::system::SystemState>) -> Result<DetailedMemoryStats, String> {
-    let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
-    sys.refresh_memory();
-
-    let total = sys.total_memory();
-    let used = sys.used_memory();
-    let free = sys.free_memory();
-    let available = sys.available_memory();
-    let pct = if total > 0 { (used as f32 / total as f32) * 100.0 } else { 0.0 };
+    let (total, used, free, available, pct) = {
+        let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
+        sys.refresh_memory();
+        let total = sys.total_memory();
+        let used = sys.used_memory();
+        let free = sys.free_memory();
+        let available = sys.available_memory();
+        let pct = if total > 0 { (used as f32 / total as f32) * 100.0 } else { 0.0 };
+        (total, used, free, available, pct)
+    };
 
     #[cfg(target_os = "windows")]
     {
@@ -93,8 +94,8 @@ pub fn get_detailed_memory_stats(state: tauri::State<'_, super::system::SystemSt
             commit_limit: total,
             paged_pool: 0,
             non_paged_pool: 0,
-            page_file_total: sys.total_swap(),
-            page_file_used: sys.used_swap(),
+            page_file_total: 0,
+            page_file_used: 0,
             usage_percentage: pct,
         })
     }
@@ -105,14 +106,35 @@ pub fn clean_memory(
     state: tauri::State<'_, super::system::SystemState>,
     db: tauri::State<'_, super::super::db::Database>,
 ) -> Result<CleanMemoryResult, String> {
-    let ram_before = {
+    // 1. Measure initial RAM and collect process PIDs with quick lock
+    let (ram_before, pids_to_trim) = {
         let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
         sys.refresh_memory();
-        sys.used_memory()
-    };
+        sys.refresh_processes_specifics(
+            sysinfo::ProcessesToUpdate::All,
+            sysinfo::ProcessRefreshKind::nothing(),
+        );
+
+        let ram = sys.used_memory();
+        let mut pids = Vec::with_capacity(sys.processes().len());
+
+        for (pid, proc_) in sys.processes() {
+            let pid_u32 = pid.as_u32();
+            if pid_u32 <= 4 {
+                continue;
+            }
+            let name = proc_.name().to_string_lossy().to_lowercase();
+            if name.contains("systempilot") || name.contains("csrss") || name.contains("lsass") {
+                continue;
+            }
+            pids.push(pid_u32);
+        }
+        (ram, pids)
+    }; // Lock released immediately!
 
     let mut trimmed_count = 0usize;
 
+    // 2. Perform process trimming WITHOUT holding global system lock
     #[cfg(target_os = "windows")]
     {
         use windows_sys::Win32::Foundation::CloseHandle;
@@ -121,21 +143,7 @@ pub fn clean_memory(
             OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_SET_QUOTA,
         };
 
-        let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
-        sys.refresh_processes(sysinfo::ProcessesToUpdate::All);
-
-        for (pid, proc_) in sys.processes() {
-            let pid_u32 = pid.as_u32();
-            if pid_u32 <= 4 {
-                continue; // Skip system idle & kernel
-            }
-            let name = proc_.name().to_string_lossy().to_lowercase();
-
-            // Don't trim critical core processes or SystemPilot itself
-            if name.contains("systempilot") || name.contains("csrss") || name.contains("lsass") {
-                continue;
-            }
-
+        for pid_u32 in pids_to_trim {
             unsafe {
                 let handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_SET_QUOTA, 0, pid_u32);
                 if !handle.is_null() {
@@ -148,8 +156,10 @@ pub fn clean_memory(
         }
     }
 
-    // Refresh memory after cleanup
-    std::thread::sleep(std::time::Duration::from_millis(150));
+    // Brief settling delay outside lock
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
+    // 3. Re-sample RAM after cleanup
     let ram_after = {
         let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
         sys.refresh_memory();
@@ -165,7 +175,6 @@ pub fn clean_memory(
         released as f64 / (1024.0 * 1024.0)
     );
 
-    // Save log in SQLite
     let _ = db.add_cleanup_log(released, "RAM Working Set Trim", true);
 
     Ok(CleanMemoryResult {
@@ -188,7 +197,6 @@ mod tests {
         let released = ram_before.saturating_sub(ram_after);
         assert_eq!(released, 1_500_000_000);
 
-        // Edge case: ram_after > ram_before (e.g. background process allocated memory during clean)
         let ram_after_higher = 9_000_000_000u64;
         let released_clamped = ram_before.saturating_sub(ram_after_higher);
         assert_eq!(released_clamped, 0);

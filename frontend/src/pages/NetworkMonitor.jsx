@@ -8,18 +8,24 @@ import { Wifi, ArrowDownRight, ArrowUpRight, Globe, ShieldCheck } from 'lucide-r
 
 export function NetworkMonitor({ stats, history }) {
   const [interfaces, setInterfaces] = useState([]);
+  const isFetchingRef = React.useRef(false);
+
+  const fetchNet = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const list = await api.getNetworkDetails();
+      setInterfaces(list || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      isFetchingRef.current = false;
+    }
+  };
 
   useEffect(() => {
-    async function fetchNet() {
-      try {
-        const list = await api.getNetworkDetails();
-        setInterfaces(list || []);
-      } catch (e) {
-        console.error(e);
-      }
-    }
     fetchNet();
-    const interval = setInterval(fetchNet, 2500);
+    const interval = setInterval(fetchNet, 3000);
     return () => clearInterval(interval);
   }, []);
 

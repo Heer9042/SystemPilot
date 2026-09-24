@@ -4,26 +4,30 @@ import { Badge } from '../components/ui/Badge';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { api } from '../services/tauriApi';
 import { formatBytes } from '../utils/formatters';
-import { Tv, Activity, Thermometer, ShieldCheck } from 'lucide-react';
+import { Tv, Activity, Thermometer, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 export function GpuMonitor() {
   const [gpus, setGpus] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isFetchingRef = React.useRef(false);
+
+  const fetchGpu = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const list = await api.getGpuInfo();
+      setGpus(list || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      isFetchingRef.current = false;
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchGpu() {
-      try {
-        const list = await api.getGpuInfo();
-        setGpus(list || []);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchGpu();
-    const interval = setInterval(fetchGpu, 3000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -35,9 +39,14 @@ export function GpuMonitor() {
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">Discrete and Integrated graphics hardware detection</p>
         </div>
-        <Badge variant="brand" size="md">
-          {gpus.length} Detected Adapter{gpus.length > 1 ? 's' : ''}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="brand" size="md">
+            {gpus.length} Detected Adapter{gpus.length > 1 ? 's' : ''}
+          </Badge>
+          <Button variant="secondary" size="sm" icon={RefreshCw} onClick={fetchGpu} disabled={loading}>
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

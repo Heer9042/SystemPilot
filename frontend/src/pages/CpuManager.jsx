@@ -8,18 +8,23 @@ import { Cpu, Zap, Activity, Info } from 'lucide-react';
 
 export function CpuManager({ stats, history }) {
   const [cpuDetails, setCpuDetails] = useState(null);
+  const isFetchingRef = React.useRef(false);
 
   useEffect(() => {
     async function fetchCpu() {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
       try {
         const data = await api.getCpuDetailedInfo();
         setCpuDetails(data);
       } catch (e) {
         console.error(e);
+      } finally {
+        isFetchingRef.current = false;
       }
     }
     fetchCpu();
-    const interval = setInterval(fetchCpu, 1500);
+    const interval = setInterval(fetchCpu, 2000);
     return () => clearInterval(interval);
   }, []);
 

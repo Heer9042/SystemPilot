@@ -16,8 +16,11 @@ export function useSystemStats(intervalMs = 1000) {
 
   useEffect(() => {
     isMounted.current = true;
+    let inFlight = false;
 
     async function fetchStats() {
+      if (inFlight || !isMounted.current) return;
+      inFlight = true;
       try {
         const data = await api.getSystemStats();
         if (!isMounted.current) return;
@@ -41,6 +44,8 @@ export function useSystemStats(intervalMs = 1000) {
           setError(err.toString());
           setLoading(false);
         }
+      } finally {
+        inFlight = false;
       }
     }
 

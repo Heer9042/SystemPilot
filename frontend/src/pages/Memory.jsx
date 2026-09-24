@@ -24,11 +24,10 @@ export function Memory({ stats }) {
   const [autoClean, setAutoClean] = useState(false);
   const [threshold, setThreshold] = useState(85);
   const [cooldown, setCooldown] = useState(5);
+  const isFetchingRef = React.useRef(false);
 
-  const fetchMemoryDetails = async () => {
+  const fetchStaticData = async () => {
     try {
-      const data = await api.getDetailedMemoryStats();
-      setMemDetails(data);
       const hist = await api.getCleanupHistory();
       setCleanupHistory(hist || []);
       const settings = await api.getSettings();
@@ -42,9 +41,23 @@ export function Memory({ stats }) {
     }
   };
 
+  const fetchMemoryDetails = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const data = await api.getDetailedMemoryStats();
+      setMemDetails(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      isFetchingRef.current = false;
+    }
+  };
+
   useEffect(() => {
+    fetchStaticData();
     fetchMemoryDetails();
-    const interval = setInterval(fetchMemoryDetails, 2000);
+    const interval = setInterval(fetchMemoryDetails, 2500);
     return () => clearInterval(interval);
   }, []);
 
@@ -54,7 +67,7 @@ export function Memory({ stats }) {
     try {
       const res = await api.cleanMemory();
       setCleanResult(res);
-      await fetchMemoryDetails();
+      await Promise.all([fetchMemoryDetails(), fetchStaticData()]);
     } catch (err) {
       console.error(err);
     } finally {
