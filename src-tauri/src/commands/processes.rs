@@ -55,7 +55,7 @@ pub fn get_processes(state: tauri::State<'_, super::system::SystemState>) -> Res
         // Use lightweight specific refresh
         sys.refresh_processes_specifics(
             ProcessesToUpdate::All,
-            ProcessRefreshKind::nothing()
+            ProcessRefreshKind::new()
                 .with_cpu()
                 .with_memory()
                 .with_disk_usage(),

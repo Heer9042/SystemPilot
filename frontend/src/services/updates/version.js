@@ -4,7 +4,7 @@
 import { api } from '../tauriApi.js';
 
 // Fallback version matching package.json and Cargo.toml
-export const FALLBACK_VERSION = '0.0.3';
+export const FALLBACK_VERSION = '0.0.1';
 
 /**
  * Parses a semantic version string into structured parts.

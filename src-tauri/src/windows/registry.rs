@@ -11,7 +11,7 @@ use windows_sys::Win32::Foundation::ERROR_SUCCESS;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Registry::{
     RegCloseKey, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW, RegQueryValueExW, HKEY,
-    HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ,
+    KEY_READ, REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ,
 };
 
 #[cfg(target_os = "windows")]

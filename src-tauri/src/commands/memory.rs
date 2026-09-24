@@ -112,7 +112,7 @@ pub fn clean_memory(
         sys.refresh_memory();
         sys.refresh_processes_specifics(
             sysinfo::ProcessesToUpdate::All,
-            sysinfo::ProcessRefreshKind::nothing(),
+            sysinfo::ProcessRefreshKind::new(),
         );
 
         let ram = sys.used_memory();
