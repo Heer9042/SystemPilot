@@ -63,13 +63,13 @@ export function CleanupCenter() {
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* Hero Banner */}
-      <Card className="p-5 bg-gradient-to-r from-surface-900 via-surface-900 to-indigo-950/40 border-brand-500/30 flex flex-col md:flex-row items-center justify-between gap-4">
+      <Card className="p-5 bg-gradient-to-r from-slate-100 via-indigo-50/50 to-indigo-100/60 dark:from-surface-900 dark:via-surface-900 dark:to-indigo-950/40 border-slate-200 dark:border-brand-500/30 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="space-y-1 max-w-xl">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-brand-400" />
-            <h2 className="text-lg font-bold text-slate-100">Safe System Cleanup Center</h2>
+            <Sparkles className="w-6 h-6 text-brand-500 dark:text-brand-400" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Safe System Cleanup Center</h2>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             Scan and safely reclaim disk space from temporary application caches, Windows crash dumps, and stale thumbnail databases. User documents, downloads, and personal files are never touched.
           </p>
         </div>
@@ -93,12 +93,12 @@ export function CleanupCenter() {
 
       {/* Clean Output Result */}
       {cleanOutput && (
-        <Card className="p-4 bg-emerald-950/30 border-emerald-500/40 animate-scaleUp">
+        <Card className="p-4 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-500/40 animate-scaleUp">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <div>
-              <h4 className="text-sm font-bold text-emerald-200">System Cleanup Completed</h4>
-              <p className="text-xs text-emerald-300/80">{cleanOutput.message}</p>
+              <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">System Cleanup Completed</h4>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300/80">{cleanOutput.message}</p>
             </div>
           </div>
         </Card>
@@ -106,14 +106,14 @@ export function CleanupCenter() {
 
       {/* Categories List */}
       <Card className="p-0 overflow-hidden">
-        <div className="p-4 border-b border-slate-800 flex justify-between items-center text-xs">
-          <span className="font-bold text-slate-200">Cleanable System Caches</span>
-          <span className="font-mono text-slate-400">
-            Total Potential Space: <strong className="text-brand-300">{formatBytes(scanResult?.total_bytes || 0)}</strong>
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
+          <span className="font-bold text-slate-800 dark:text-slate-200">Cleanable System Caches</span>
+          <span className="font-mono text-slate-500 dark:text-slate-400">
+            Total Potential Space: <strong className="text-brand-600 dark:text-brand-300">{formatBytes(scanResult?.total_bytes || 0)}</strong>
           </span>
         </div>
 
-        <div className="divide-y divide-slate-800/80">
+        <div className="divide-y divide-slate-200 dark:divide-slate-800/80">
           {scanResult?.categories?.map((cat) => {
             const isSelected = selectedIds.includes(cat.id);
             return (
@@ -121,7 +121,7 @@ export function CleanupCenter() {
                 key={cat.id}
                 onClick={() => toggleCategory(cat.id)}
                 className={`p-4 flex items-center justify-between cursor-pointer transition ${
-                  isSelected ? 'bg-surface-800/30' : 'opacity-60 hover:opacity-100'
+                  isSelected ? 'bg-slate-50 dark:bg-surface-800/30' : 'opacity-60 hover:opacity-100'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -129,21 +129,21 @@ export function CleanupCenter() {
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => {}}
-                    className="w-4 h-4 rounded border-slate-700 text-brand-600 focus:ring-0 bg-surface-900 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 focus:ring-0 bg-white dark:bg-surface-900 cursor-pointer"
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-slate-200">{cat.name}</h4>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-200">{cat.name}</h4>
                       <Badge variant="success" size="xs">Safe to remove</Badge>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">{cat.description}</p>
-                    <span className="text-[11px] text-slate-500 font-mono block mt-0.5">{cat.path}</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{cat.description}</p>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono block mt-0.5">{cat.path}</span>
                   </div>
                 </div>
 
                 <div className="text-right font-mono text-xs">
-                  <span className="font-bold text-slate-200 block">{formatBytes(cat.total_bytes)}</span>
-                  <span className="text-slate-400 text-[11px]">{cat.file_count} files</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-200 block">{formatBytes(cat.total_bytes)}</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px]">{cat.file_count} files</span>
                 </div>
               </div>
             );
@@ -168,24 +168,24 @@ export function CleanupCenter() {
         }
       >
         <div className="space-y-3">
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-slate-600 dark:text-slate-300">
             SystemPilot will remove approximately <strong>{formatBytes(selectedBytes)}</strong> of temporary files from the selected categories.
           </p>
 
-          <div className="p-3 rounded-lg bg-surface-900 border border-slate-800">
-            <label className="flex items-center gap-2.5 text-xs text-slate-200 cursor-pointer">
+          <div className="p-3 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800">
+            <label className="flex items-center gap-2.5 text-xs text-slate-800 dark:text-slate-200 cursor-pointer">
               <input
                 type="checkbox"
                 checked={emptyRecycleBin}
                 onChange={(e) => setEmptyRecycleBin(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-700 text-brand-600 focus:ring-0 bg-surface-950"
+                className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 focus:ring-0 bg-white dark:bg-surface-950"
               />
               <span>Also empty Windows Recycle Bin</span>
             </label>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-1">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <span>Safety check passed. No personal user files will be modified.</span>
           </div>
         </div>

@@ -20,12 +20,12 @@ export function Button({
   };
 
   const variantStyles = {
-    primary: 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/20 border border-brand-500/30',
-    secondary: 'bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700/50',
-    danger: 'bg-status-danger/90 hover:bg-status-danger text-white shadow-lg shadow-status-danger/20 border border-red-500/30',
-    success: 'bg-status-success/90 hover:bg-status-success text-white shadow-lg shadow-status-success/20 border border-emerald-500/30',
-    ghost: 'hover:bg-surface-800 text-slate-300 hover:text-white',
-    outline: 'border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white bg-transparent',
+    primary: 'bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/20 border border-brand-500/30',
+    secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300/80 dark:bg-surface-800 dark:hover:bg-surface-700 dark:text-slate-200 dark:border-slate-700/50',
+    danger: 'bg-status-danger hover:bg-red-600 text-white shadow-md shadow-status-danger/20 border border-red-500/30',
+    success: 'bg-status-success hover:bg-emerald-600 text-white shadow-md shadow-status-success/20 border border-emerald-500/30',
+    ghost: 'hover:bg-slate-100 dark:hover:bg-surface-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white',
+    outline: 'border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-transparent',
   };
 
   return (

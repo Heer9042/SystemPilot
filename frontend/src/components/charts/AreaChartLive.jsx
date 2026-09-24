@@ -14,10 +14,10 @@ export function AreaChartLive({
   return (
     <div className="w-full flex flex-col">
       {title && (
-        <div className="flex justify-between items-center text-xs text-slate-400 mb-2">
+        <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">
           <span>{title}</span>
           {data.length > 0 && (
-            <span className="font-semibold text-slate-200">
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
               {data[data.length - 1]?.value} {unit}
             </span>
           )}
@@ -36,14 +36,15 @@ export function AreaChartLive({
             <XAxis dataKey="time" hide />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'var(--tooltip-bg)',
+                borderColor: 'var(--tooltip-border)',
                 borderRadius: '8px',
                 fontSize: '12px',
-                color: '#fff',
+                color: 'var(--tooltip-text)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               }}
               formatter={(value) => [`${value} ${unit}`, 'Usage']}
-              labelStyle={{ color: '#94a3b8' }}
+              labelStyle={{ color: 'var(--text-muted)' }}
             />
             <Area
               type="monotone"

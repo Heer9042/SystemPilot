@@ -47,10 +47,10 @@ export function Performance() {
     <div className="space-y-4 animate-fadeIn">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <Gauge className="w-5 h-5 text-indigo-400" /> Windows Performance & Power Profiles
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> Windows Performance & Power Profiles
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Control Windows hardware CPU governor, power states, and system responsiveness
           </p>
         </div>
@@ -61,7 +61,7 @@ export function Performance() {
       </div>
 
       {statusMessage && (
-        <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300 flex items-center justify-between">
+        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
           <span>{statusMessage}</span>
           <button onClick={() => setStatusMessage(null)}>✕</button>
         </div>
@@ -78,7 +78,9 @@ export function Performance() {
             <Card
               key={plan.guid}
               className={`p-5 flex flex-col justify-between transition-all ${
-                isActive ? 'border-brand-500/60 shadow-lg shadow-brand-500/10 bg-surface-900' : 'border-slate-800'
+                isActive
+                  ? 'border-brand-500/60 shadow-lg shadow-brand-500/10 bg-brand-50/20 dark:bg-surface-900'
+                  : 'border-slate-200 dark:border-slate-800'
               }`}
             >
               <div className="space-y-2">
@@ -87,24 +89,24 @@ export function Performance() {
                     <div
                       className={`p-2.5 rounded-xl border ${
                         isHigh
-                          ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                          ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
                           : isSaver
-                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                          : 'bg-brand-500/15 text-brand-400 border-brand-500/30'
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                          : 'bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/15 dark:text-brand-400 dark:border-brand-500/30'
                       }`}
                     >
                       {isHigh ? <Zap className="w-5 h-5" /> : isSaver ? <Leaf className="w-5 h-5" /> : <Gauge className="w-5 h-5" />}
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-100">{plan.name}</h3>
-                      <p className="text-xs text-slate-400 font-mono text-[11px] truncate max-w-xs">{plan.guid}</p>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{plan.name}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono text-[11px] truncate max-w-xs">{plan.guid}</p>
                     </div>
                   </div>
 
                   {isActive && <Badge variant="brand" size="xs">Active</Badge>}
                 </div>
 
-                <p className="text-xs text-slate-300 pt-2 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-slate-300 pt-2 leading-relaxed">
                   {isHigh
                     ? 'Favors maximum processor performance and responsiveness. Disables aggressive core parking and throttling.'
                     : isSaver
@@ -113,7 +115,7 @@ export function Performance() {
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-slate-800 flex justify-end">
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
                 <Button
                   variant={isActive ? 'secondary' : 'primary'}
                   size="sm"

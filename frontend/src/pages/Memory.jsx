@@ -87,17 +87,17 @@ export function Memory({ stats }) {
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Hero Cleaner Banner */}
-      <Card className="p-6 bg-gradient-to-r from-surface-900 via-surface-900 to-indigo-950/40 border-brand-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+      <Card className="p-6 bg-gradient-to-r from-slate-100 via-indigo-50/50 to-indigo-100/60 dark:from-surface-900 dark:via-surface-900 dark:to-indigo-950/40 border-slate-200 dark:border-brand-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
         <div className="space-y-2 max-w-xl">
           <div className="flex items-center gap-2">
-            <Layers className="w-6 h-6 text-brand-400" />
-            <h2 className="text-xl font-extrabold text-slate-100">Windows Memory Manager & Optimizer</h2>
+            <Layers className="w-6 h-6 text-brand-500 dark:text-brand-400" />
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">Windows Memory Manager & Optimizer</h2>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             SystemPilot uses official Windows memory management APIs to safely trim non-essential application working sets and flush dormant cached pages back to system standby pool without terminating apps.
           </p>
-          <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400">
-            <Info className="w-3.5 h-3.5 text-brand-400" />
+          <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <Info className="w-3.5 h-3.5 text-brand-500 dark:text-brand-400" />
             <span>Safe & Non-destructive • No background processes are terminated</span>
           </div>
         </div>
@@ -114,29 +114,29 @@ export function Memory({ stats }) {
           >
             {cleaning ? 'CLEANING...' : 'CLEAN MEMORY'}
           </Button>
-          <span className="text-[11px] text-slate-400">Click to release unreferenced RAM</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Click to release unreferenced RAM</span>
         </div>
       </Card>
 
       {/* Clean Result Callout */}
       {cleanResult && (
-        <Card className="p-4 bg-emerald-950/30 border-emerald-500/40 animate-scaleUp">
+        <Card className="p-4 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-500/40 animate-scaleUp">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               <div>
-                <h4 className="text-sm font-bold text-emerald-200">Memory Successfully Optimized</h4>
-                <p className="text-xs text-emerald-300/80">{cleanResult.message}</p>
+                <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">Memory Successfully Optimized</h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300/80">{cleanResult.message}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 text-xs font-mono">
               <div>
-                <span className="text-slate-400">Before: </span>
-                <span className="font-bold text-slate-200">{formatBytes(cleanResult.ram_before)}</span>
+                <span className="text-slate-500 dark:text-slate-400">Before: </span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{formatBytes(cleanResult.ram_before)}</span>
               </div>
               <div>
-                <span className="text-slate-400">After: </span>
-                <span className="font-bold text-emerald-300">{formatBytes(cleanResult.ram_after)}</span>
+                <span className="text-slate-500 dark:text-slate-400">After: </span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-300">{formatBytes(cleanResult.ram_after)}</span>
               </div>
               <Badge variant="success" size="md">
                 - {formatBytes(cleanResult.ram_released)} Released
@@ -149,9 +149,9 @@ export function Memory({ stats }) {
       {/* RAM Visualization Bar */}
       <Card className="space-y-3">
         <div className="flex justify-between items-center text-xs">
-          <span className="font-bold text-slate-200">Physical Memory Distribution</span>
-          <span className="font-mono text-slate-400">
-            Total: <strong className="text-slate-200">{formatBytes(totalRam)}</strong>
+          <span className="font-bold text-slate-800 dark:text-slate-200">Physical Memory Distribution</span>
+          <span className="font-mono text-slate-500 dark:text-slate-400">
+            Total: <strong className="text-slate-800 dark:text-slate-200">{formatBytes(totalRam)}</strong>
           </span>
         </div>
         <MemoryBreakdownBar
@@ -166,64 +166,64 @@ export function Memory({ stats }) {
       {/* Detailed Memory Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">In-Use Physical RAM</span>
-          <div className="text-lg font-bold font-mono text-brand-300">{formatBytes(usedRam)}</div>
-          <p className="text-[10px] text-slate-500">Active working sets</p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">In-Use Physical RAM</span>
+          <div className="text-lg font-bold font-mono text-brand-600 dark:text-brand-300">{formatBytes(usedRam)}</div>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Active working sets</p>
         </Card>
 
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">Available Memory</span>
-          <div className="text-lg font-bold font-mono text-emerald-400">{formatBytes(availableRam)}</div>
-          <p className="text-[10px] text-slate-500">Free + Reclaimable</p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Available Memory</span>
+          <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">{formatBytes(availableRam)}</div>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Free + Reclaimable</p>
         </Card>
 
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">Cached / Standby</span>
-          <div className="text-lg font-bold font-mono text-amber-400">{formatBytes(cachedRam || standbyRam)}</div>
-          <p className="text-[10px] text-slate-500">Fast cache standby pool</p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Cached / Standby</span>
+          <div className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400">{formatBytes(cachedRam || standbyRam)}</div>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Fast cache standby pool</p>
         </Card>
 
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">Committed Memory</span>
-          <div className="text-lg font-bold font-mono text-slate-200">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Committed Memory</span>
+          <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-200">
             {formatBytes(memDetails?.committed_ram || 0)}
           </div>
-          <p className="text-[10px] text-slate-500">Limit: {formatBytes(memDetails?.commit_limit || 0)}</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Limit: {formatBytes(memDetails?.commit_limit || 0)}</p>
         </Card>
 
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">Paged Pool</span>
-          <div className="text-lg font-bold font-mono text-slate-200">{formatBytes(memDetails?.paged_pool || 0)}</div>
-          <p className="text-[10px] text-slate-500">Kernel paged allocations</p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Paged Pool</span>
+          <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-200">{formatBytes(memDetails?.paged_pool || 0)}</div>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Kernel paged allocations</p>
         </Card>
 
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">Non-Paged Pool</span>
-          <div className="text-lg font-bold font-mono text-slate-200">{formatBytes(memDetails?.non_paged_pool || 0)}</div>
-          <p className="text-[10px] text-slate-500">Locked kernel structures</p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Non-Paged Pool</span>
+          <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-200">{formatBytes(memDetails?.non_paged_pool || 0)}</div>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Locked kernel structures</p>
         </Card>
 
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">Page File Allocated</span>
-          <div className="text-lg font-bold font-mono text-slate-200">{formatBytes(memDetails?.page_file_total || 0)}</div>
-          <p className="text-[10px] text-slate-500">Used: {formatBytes(memDetails?.page_file_used || 0)}</p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Page File Allocated</span>
+          <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-200">{formatBytes(memDetails?.page_file_total || 0)}</div>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Used: {formatBytes(memDetails?.page_file_used || 0)}</p>
         </Card>
 
         <Card className="p-3.5 space-y-1">
-          <span className="text-[11px] text-slate-400">RAM Load %</span>
-          <div className="text-lg font-bold font-mono text-indigo-400">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">RAM Load %</span>
+          <div className="text-lg font-bold font-mono text-indigo-600 dark:text-indigo-400">
             {memDetails?.usage_percentage?.toFixed(1) || 0}%
           </div>
-          <p className="text-[10px] text-slate-500">Hardware utilization</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Hardware utilization</p>
         </Card>
       </div>
 
       {/* Automatic Memory Cleaning Configuration */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-            <Sparkles className="w-4 h-4 text-brand-400" />
-            <h3 className="text-sm font-bold text-slate-100">Automatic Memory Optimization</h3>
+          <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+            <Sparkles className="w-4 h-4 text-brand-500 dark:text-brand-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Automatic Memory Optimization</h3>
           </div>
 
           <Toggle
@@ -233,10 +233,10 @@ export function Memory({ stats }) {
             description="Automatically flushes reclaimable working sets when memory load exceeds threshold."
           />
 
-          <div className="space-y-2 pt-2 border-t border-slate-800">
+          <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-300 font-medium">Trigger RAM Threshold:</span>
-              <span className="font-bold text-brand-300 font-mono">{threshold}%</span>
+              <span className="text-slate-700 dark:text-slate-300 font-medium">Trigger RAM Threshold:</span>
+              <span className="font-bold text-brand-600 dark:text-brand-300 font-mono">{threshold}%</span>
             </div>
             <div className="flex gap-2">
               {[50, 60, 70, 80, 85, 90].map((val) => (
@@ -246,7 +246,7 @@ export function Memory({ stats }) {
                   className={`flex-1 py-1 rounded text-xs font-semibold transition ${
                     threshold === val
                       ? 'bg-brand-600 text-white shadow'
-                      : 'bg-surface-800 text-slate-400 hover:text-white'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-surface-800 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
                   {val}%
@@ -255,10 +255,10 @@ export function Memory({ stats }) {
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-slate-800">
+          <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-300 font-medium">Cleanup Cooldown Period:</span>
-              <span className="font-bold text-brand-300 font-mono">{cooldown} min</span>
+              <span className="text-slate-700 dark:text-slate-300 font-medium">Cleanup Cooldown Period:</span>
+              <span className="font-bold text-brand-600 dark:text-brand-300 font-mono">{cooldown} min</span>
             </div>
             <div className="flex gap-2">
               {[1, 5, 10, 30].map((min) => (
@@ -268,7 +268,7 @@ export function Memory({ stats }) {
                   className={`flex-1 py-1 rounded text-xs font-semibold transition ${
                     cooldown === min
                       ? 'bg-brand-600 text-white shadow'
-                      : 'bg-surface-800 text-slate-400 hover:text-white'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-surface-800 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
                   {min}m
@@ -280,12 +280,12 @@ export function Memory({ stats }) {
 
         {/* Cleanup History Log from SQLite */}
         <Card className="space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <History className="w-4 h-4 text-slate-400" />
-              <h3 className="text-sm font-bold text-slate-100">Optimization History (SQLite)</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Optimization History (SQLite)</h3>
             </div>
-            <button onClick={fetchMemoryDetails} className="text-slate-400 hover:text-white">
+            <button onClick={fetchMemoryDetails} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -297,11 +297,11 @@ export function Memory({ stats }) {
               cleanupHistory.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 rounded-lg bg-surface-900 border border-slate-800/80 text-xs font-mono"
+                  className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800/80 text-xs font-mono"
                 >
                   <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="text-slate-300">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                    <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                    <span className="text-slate-700 dark:text-slate-300">{new Date(item.timestamp).toLocaleTimeString()}</span>
                     <span className="text-slate-500 font-sans">{item.categories}</span>
                   </div>
                   <Badge variant="success" size="xs">

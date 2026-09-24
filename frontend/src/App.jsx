@@ -83,7 +83,7 @@ export function App() {
   const activeNav = NAVIGATION_ITEMS.find((n) => n.id === activeTab);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-surface-950 text-slate-100 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-100 dark:bg-surface-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-200">
       {/* First Run Onboarding Modal */}
       {showFirstRun && (
         <FirstRunWizard
@@ -118,7 +118,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-gradient-to-br from-surface-950 via-surface-900/60 to-surface-950">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 dark:from-surface-950 dark:via-surface-900/60 dark:to-surface-950">
         {/* Top Header */}
         <TopBar
           theme={theme}
@@ -141,8 +141,8 @@ export function App() {
         {/* Dynamic Toast Notification */}
         {toast && (
           <div className="fixed top-14 right-6 z-50 animate-bounce">
-            <div className="glass-panel px-4 py-2.5 rounded-xl border border-brand-500/50 shadow-2xl bg-surface-900/95 text-xs text-brand-300 font-medium flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand-400 animate-ping" />
+            <div className="glass-panel px-4 py-2.5 rounded-xl border border-brand-500/50 shadow-2xl bg-white/95 dark:bg-surface-900/95 text-xs text-brand-600 dark:text-brand-300 font-medium flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-brand-500 animate-ping" />
               {toast}
             </div>
           </div>

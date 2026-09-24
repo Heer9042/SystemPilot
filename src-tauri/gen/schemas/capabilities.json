@@ -1,1 +1,1 @@
-{"default":{"identifier":"default","description":"Default permissions for SystemPilot desktop application","local":true,"windows":["main"],"permissions":["core:default","shell:default","notification:default","autostart:default","fs:default"]}}
+{"default":{"identifier":"default","description":"Default permissions for SystemPilot desktop application","local":true,"windows":["*"],"permissions":["core:default","core:window:default","core:event:default","shell:default","notification:default","autostart:default","fs:default"]}}

@@ -68,19 +68,19 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
-      <div className="glass-panel w-full max-w-xl rounded-3xl p-8 shadow-2xl border border-brand-500/30 flex flex-col justify-between min-h-[500px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn select-none">
+      <div className="glass-panel w-full max-w-xl rounded-3xl p-8 shadow-2xl border border-slate-200 dark:border-brand-500/30 flex flex-col justify-between min-h-[500px]">
         {/* Step Progress Tracker */}
-        <div className="flex items-center justify-between pb-6 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 p-0.5 shadow-md flex items-center justify-center">
-              <div className="w-full h-full bg-surface-950 rounded-[10px] flex items-center justify-center">
-                <Gauge className="w-4 h-4 text-brand-400" />
+              <div className="w-full h-full bg-white dark:bg-surface-950 rounded-[10px] flex items-center justify-center">
+                <Gauge className="w-4 h-4 text-brand-600 dark:text-brand-400" />
               </div>
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100">Setup Wizard</h2>
-              <span className="text-[11px] text-slate-400">Step {step} of 6</span>
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">Setup Wizard</h2>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Step {step} of 6</span>
             </div>
           </div>
 
@@ -89,7 +89,7 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
               <span
                 key={s}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  s === step ? 'w-6 bg-brand-500' : s < step ? 'w-2 bg-emerald-500' : 'w-2 bg-surface-800'
+                  s === step ? 'w-6 bg-brand-500' : s < step ? 'w-2 bg-emerald-500' : 'w-2 bg-slate-200 dark:bg-surface-800'
                 }`}
               />
             ))}
@@ -101,17 +101,17 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
           {/* STEP 1: WELCOME */}
           {step === 1 && (
             <div className="space-y-4 text-center animate-fadeIn">
-              <div className="w-16 h-16 rounded-2xl bg-brand-600/20 border border-brand-500/40 text-brand-400 flex items-center justify-center mx-auto shadow-xl shadow-brand-500/10">
+              <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 border border-brand-200 dark:bg-brand-600/20 dark:border-brand-500/40 dark:text-brand-400 flex items-center justify-center mx-auto shadow-xl shadow-brand-500/10">
                 <Sparkles className="w-8 h-8" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-2xl font-extrabold text-slate-100">Welcome to SystemPilot</h3>
-                <p className="text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+                <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Welcome to SystemPilot</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
                   SystemPilot helps you monitor, manage, and safely optimize your Windows system resources with high-precision native telemetry.
                 </p>
               </div>
-              <div className="p-3.5 rounded-xl bg-surface-900 border border-slate-800/80 max-w-md mx-auto text-left text-xs text-slate-400 flex items-start gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800/80 max-w-md mx-auto text-left text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                 <span>100% Offline-first. No accounts, no cloud sync, no tracking, and no invasive modifications.</span>
               </div>
             </div>
@@ -121,12 +121,12 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
           {step === 2 && (
             <div className="space-y-4 animate-fadeIn">
               <div>
-                <h3 className="text-lg font-bold text-slate-100">Choose Your Appearance</h3>
-                <p className="text-xs text-slate-400">Select your preferred color interface.</p>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Choose Your Appearance</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Select your preferred color interface.</p>
               </div>
               <div className="grid grid-cols-3 gap-3 pt-2">
                 {[
-                  { id: 'dark', label: 'Dark Mode', icon: Moon, desc: 'Sleek dark theme (Recommended)' },
+                  { id: 'dark', label: 'Dark Mode', icon: Moon, desc: 'Sleek dark theme' },
                   { id: 'light', label: 'Light Mode', icon: Sun, desc: 'Clean bright layout' },
                   { id: 'system', label: 'Follow Windows', icon: Laptop, desc: 'Matches OS theme' },
                 ].map((t) => {
@@ -141,14 +141,14 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
                       }}
                       className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all ${
                         isSelected
-                          ? 'bg-brand-600/20 border-brand-500 shadow-lg shadow-brand-500/10'
-                          : 'bg-surface-900 border-slate-800 hover:border-slate-700'
+                          ? 'bg-brand-50 border-brand-500 text-brand-700 shadow-sm dark:bg-brand-600/20 dark:text-brand-300 dark:border-brand-500 dark:shadow-brand-500/10'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 dark:bg-surface-900 dark:border-slate-800 dark:text-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
-                      <Icon className={`w-6 h-6 ${isSelected ? 'text-brand-400' : 'text-slate-400'}`} />
+                      <Icon className={`w-6 h-6 ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">{t.label}</span>
-                        <span className="text-[10px] text-slate-400">{t.desc}</span>
+                        <span className="text-xs font-bold block">{t.label}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">{t.desc}</span>
                       </div>
                     </button>
                   );
@@ -161,8 +161,8 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
           {step === 3 && (
             <div className="space-y-4 animate-fadeIn">
               <div>
-                <h3 className="text-lg font-bold text-slate-100">Monitoring Behavior</h3>
-                <p className="text-xs text-slate-400">Choose telemetry polling frequency and CPU resource overhead.</p>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Monitoring Behavior</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Choose telemetry polling frequency and CPU resource overhead.</p>
               </div>
               <div className="space-y-2.5 pt-2">
                 {[
@@ -177,16 +177,16 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
                       onClick={() => setConfig({ ...config, monitoringMode: m.id })}
                       className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
                         isSelected
-                          ? 'bg-brand-600/15 border-brand-500'
-                          : 'bg-surface-900 border-slate-800 hover:border-slate-700'
+                          ? 'bg-brand-50 border-brand-500 dark:bg-brand-600/15 dark:border-brand-500'
+                          : 'bg-slate-50 border-slate-200 hover:border-slate-300 dark:bg-surface-900 dark:border-slate-800 dark:hover:border-slate-700'
                       }`}
                     >
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-bold text-slate-200">{m.label}</h4>
+                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{m.label}</h4>
                           {m.badge && <Badge variant="brand" size="xs">{m.badge}</Badge>}
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{m.desc}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{m.desc}</p>
                       </div>
                       <input
                         type="radio"
@@ -205,8 +205,8 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
           {step === 4 && (
             <div className="space-y-4 animate-fadeIn">
               <div>
-                <h3 className="text-lg font-bold text-slate-100">Startup & Background Tray</h3>
-                <p className="text-xs text-slate-400">Configure how SystemPilot launches and minimizes.</p>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Startup & Background Tray</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Configure how SystemPilot launches and minimizes.</p>
               </div>
               <div className="space-y-3 pt-2">
                 <Toggle
@@ -229,8 +229,8 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
           {step === 5 && (
             <div className="space-y-4 animate-fadeIn">
               <div>
-                <h3 className="text-lg font-bold text-slate-100">Smart Notifications</h3>
-                <p className="text-xs text-slate-400">Choose when SystemPilot alerts you about system conditions.</p>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Smart Notifications</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Choose when SystemPilot alerts you about system conditions.</p>
               </div>
               <div className="grid grid-cols-3 gap-3 pt-2">
                 {[
@@ -245,14 +245,14 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
                       onClick={() => setConfig({ ...config, notifications: n.id })}
                       className={`p-3.5 rounded-xl border text-left flex flex-col justify-between gap-2 transition ${
                         isSelected
-                          ? 'bg-brand-600/20 border-brand-500 shadow-md'
-                          : 'bg-surface-900 border-slate-800 hover:border-slate-700'
+                          ? 'bg-brand-50 border-brand-500 text-brand-700 shadow-sm dark:bg-brand-600/20 dark:border-brand-500 dark:shadow-md dark:text-brand-300'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 dark:bg-surface-900 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-300'
                       }`}
                     >
-                      <Bell className={`w-5 h-5 ${isSelected ? 'text-brand-400' : 'text-slate-400'}`} />
+                      <Bell className={`w-5 h-5 ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">{n.label}</span>
-                        <span className="text-[10px] text-slate-400">{n.desc}</span>
+                        <span className="text-xs font-bold block">{n.label}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">{n.desc}</span>
                       </div>
                     </button>
                   );
@@ -265,24 +265,24 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
           {step === 6 && (
             <div className="space-y-4 animate-fadeIn">
               <div>
-                <h3 className="text-lg font-bold text-slate-100">Permissions & Ready</h3>
-                <p className="text-xs text-slate-400">Understand Windows permissions and finish setup.</p>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Permissions & Ready</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Understand Windows permissions and finish setup.</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-surface-900/90 border border-slate-800 space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-amber-400 font-bold">
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-surface-900/90 border border-amber-200 dark:border-slate-800 space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold">
                   <ShieldAlert className="w-4 h-4" />
                   <span>Administrative Permissions Notice</span>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
                   Some advanced SystemPilot features (such as adjusting process priority or trimming certain protected service working sets) may prompt for standard Windows Administrator elevation.
                 </p>
-                <p className="text-slate-400 text-[11px]">
+                <p className="text-slate-500 dark:text-slate-400 text-[11px]">
                   SystemPilot never modifies Windows kernel files or security software silently.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-emerald-400 pt-1">
+              <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 pt-1 font-medium">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 <span>Configuration complete. You are ready to launch SystemPilot.</span>
               </div>
@@ -291,7 +291,7 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
         </div>
 
         {/* Footer Navigation Buttons */}
-        <div className="pt-6 border-t border-slate-800 flex items-center justify-between">
+        <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
@@ -307,7 +307,7 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
             size="md"
             icon={step === 6 ? CheckCircle2 : ArrowRight}
             onClick={handleNext}
-            className="px-6 shadow-lg shadow-brand-600/30"
+            className="px-6 shadow-md shadow-brand-600/30"
           >
             {step === 6 ? 'Launch SystemPilot' : 'Continue'}
           </Button>

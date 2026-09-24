@@ -93,10 +93,10 @@ export function Benchmark() {
       {/* Benchmark Suite Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <Timer className="w-5 h-5 text-indigo-400" /> System Hardware Benchmark Suite
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <Timer className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> System Hardware Benchmark Suite
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Real multi-threaded mathematical, memory throughput, and disk IO measurements
           </p>
         </div>
@@ -109,16 +109,16 @@ export function Benchmark() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Cpu className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-sm font-bold text-slate-200">CPU Multi-Core</h3>
+                <Cpu className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">CPU Multi-Core</h3>
               </div>
               {cpuResult && <Badge variant="brand" size="sm">{Math.round(cpuResult.score)} pts</Badge>}
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Evaluates parallel arithmetic calculation throughput across all logical cores.
             </p>
             {cpuResult && (
-              <div className="p-2.5 rounded-lg bg-surface-900 border border-slate-800 text-xs font-mono text-slate-300">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-300">
                 {cpuResult.details}
               </div>
             )}
@@ -141,16 +141,16 @@ export function Benchmark() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-sm font-bold text-slate-200">Memory Bandwidth</h3>
+                <Layers className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Memory Bandwidth</h3>
               </div>
               {memResult && <Badge variant="brand" size="sm">{Math.round(memResult.score)} pts</Badge>}
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Measures sequential buffer read/write transfer throughput (MB/s).
             </p>
             {memResult && (
-              <div className="p-2.5 rounded-lg bg-surface-900 border border-slate-800 text-xs font-mono text-slate-300">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-300">
                 {memResult.details}
               </div>
             )}
@@ -173,16 +173,16 @@ export function Benchmark() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <HardDrive className="w-5 h-5 text-amber-400" />
-                <h3 className="text-sm font-bold text-slate-200">Disk Sequential IO</h3>
+                <HardDrive className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Disk Sequential IO</h3>
               </div>
               {diskResult && <Badge variant="brand" size="sm">{Math.round(diskResult.score)} pts</Badge>}
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Tests direct block write and sync speeds on system temporary storage.
             </p>
             {diskResult && (
-              <div className="p-2.5 rounded-lg bg-surface-900 border border-slate-800 text-xs font-mono text-slate-300">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-300">
                 {diskResult.details}
               </div>
             )}
@@ -202,13 +202,13 @@ export function Benchmark() {
       </div>
 
       {/* Controlled CPU Stress Testing */}
-      <Card className="p-5 space-y-4 border-amber-500/20">
+      <Card className="p-5 space-y-4 border-amber-200 dark:border-amber-500/20 bg-amber-50/20 dark:bg-surface-900">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Activity className="w-5 h-5 text-amber-400" />
+            <Activity className="w-5 h-5 text-amber-500 dark:text-amber-400" />
             <div>
-              <h3 className="text-sm font-bold text-slate-100">Controlled CPU Stress Test</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Controlled CPU Stress Test</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Safely stresses all CPU logical cores to verify thermal stability. Includes immediate manual stop.
               </p>
             </div>
@@ -229,7 +229,7 @@ export function Benchmark() {
               <select
                 value={stressSeconds}
                 onChange={(e) => setStressSeconds(Number(e.target.value))}
-                className="bg-surface-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
+                className="bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200"
               >
                 <option value={10}>10 Seconds</option>
                 <option value={20}>20 Seconds</option>
@@ -246,9 +246,9 @@ export function Benchmark() {
 
       {/* Benchmark History from SQLite */}
       <Card className="space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
           <History className="w-4 h-4 text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-100">Benchmark History (SQLite Records)</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Benchmark History (SQLite Records)</h3>
         </div>
 
         <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -258,14 +258,14 @@ export function Benchmark() {
             history.map((h, i) => (
               <div
                 key={i}
-                className="p-2.5 rounded-lg bg-surface-900 border border-slate-800 flex items-center justify-between text-xs font-mono"
+                className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-mono"
               >
                 <div>
-                  <span className="font-bold text-slate-200 mr-2">{h.test_type}</span>
-                  <span className="text-slate-400 font-sans text-[11px]">{h.details}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-200 mr-2">{h.test_type}</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-sans text-[11px]">{h.details}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-slate-500 text-[11px]">
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px]">
                     {new Date(h.timestamp).toLocaleTimeString()}
                   </span>
                   <Badge variant="brand" size="xs">

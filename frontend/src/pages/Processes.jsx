@@ -132,7 +132,7 @@ export function Processes() {
             placeholder="Search processes, PID, or path..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-surface-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 transition"
+            className="w-full bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 transition"
           />
         </div>
 
@@ -147,9 +147,9 @@ export function Processes() {
       </div>
 
       {statusMessage && (
-        <div className="p-2.5 rounded-lg bg-surface-900 border border-brand-500/30 text-xs text-brand-300 flex items-center justify-between">
+        <div className="p-2.5 rounded-lg bg-brand-50 dark:bg-surface-900 border border-brand-200 dark:border-brand-500/30 text-xs text-brand-700 dark:text-brand-300 flex items-center justify-between">
           <span>{statusMessage}</span>
-          <button onClick={() => setStatusMessage(null)} className="text-slate-400 hover:text-white">✕</button>
+          <button onClick={() => setStatusMessage(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
         </div>
       )}
 
@@ -157,11 +157,11 @@ export function Processes() {
       <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
           <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-surface-950/95 border-b border-slate-800 text-slate-400 select-none z-10">
+            <thead className="sticky top-0 bg-slate-100/95 dark:bg-surface-950/95 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 select-none z-10">
               <tr>
                 <th
                   onClick={() => handleSort('name')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-200 transition"
+                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
                 >
                   <div className="flex items-center gap-1">
                     Process Name
@@ -170,7 +170,7 @@ export function Processes() {
                 </th>
                 <th
                   onClick={() => handleSort('pid')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-200 transition"
+                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
                 >
                   <div className="flex items-center gap-1">
                     PID
@@ -179,7 +179,7 @@ export function Processes() {
                 </th>
                 <th
                   onClick={() => handleSort('cpu_usage')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-200 transition"
+                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
                 >
                   <div className="flex items-center gap-1">
                     CPU %
@@ -188,7 +188,7 @@ export function Processes() {
                 </th>
                 <th
                   onClick={() => handleSort('memory_bytes')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-200 transition"
+                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
                 >
                   <div className="flex items-center gap-1">
                     Working Set (RAM)
@@ -199,27 +199,27 @@ export function Processes() {
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono">
+            <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800/60 font-mono">
               {filteredProcesses.map((p) => (
                 <tr
                   key={p.pid}
-                  className="hover:bg-surface-800/40 transition group text-slate-300"
+                  className="hover:bg-slate-50 dark:hover:bg-surface-800/40 transition group text-slate-700 dark:text-slate-300"
                 >
-                  <td className="py-2.5 px-4 font-sans font-medium text-slate-200">
+                  <td className="py-2.5 px-4 font-sans font-medium text-slate-900 dark:text-slate-200">
                     <div className="flex items-center gap-2">
                       {p.is_critical && (
-                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" title="System Process" />
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" title="System Process" />
                       )}
                       <span className="truncate max-w-xs">{p.name}</span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-4 text-slate-400">{p.pid}</td>
+                  <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400">{p.pid}</td>
                   <td className="py-2.5 px-4">
-                    <span className={p.cpu_usage > 5 ? 'text-amber-400 font-bold' : 'text-slate-300'}>
+                    <span className={p.cpu_usage > 5 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-700 dark:text-slate-300'}>
                       {p.cpu_usage.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="py-2.5 px-4 text-slate-200">{formatBytes(p.memory_bytes)}</td>
+                  <td className="py-2.5 px-4 text-slate-900 dark:text-slate-200">{formatBytes(p.memory_bytes)}</td>
                   <td className="py-2.5 px-4">
                     <Badge variant="neutral" size="xs">
                       {p.priority}
@@ -234,28 +234,28 @@ export function Processes() {
                           setPriorityModal(true);
                         }}
                         title="Change Priority"
-                        className="p-1 rounded bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white"
+                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                       >
                         <Sliders className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleSuspend(p.pid)}
                         title="Suspend"
-                        className="p-1 rounded bg-surface-800 hover:bg-surface-700 text-amber-400"
+                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-amber-600 dark:text-amber-400"
                       >
                         <PauseCircle className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleResume(p.pid)}
                         title="Resume"
-                        className="p-1 rounded bg-surface-800 hover:bg-surface-700 text-emerald-400"
+                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-emerald-600 dark:text-emerald-400"
                       >
                         <PlayCircle className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleTerminate(p.pid, p.is_critical)}
                         title="End Task"
-                        className="p-1 rounded bg-surface-800 hover:bg-red-600/80 text-rose-400 hover:text-white transition"
+                        className="p-1 rounded bg-slate-100 hover:bg-red-500 hover:text-white dark:bg-surface-800 dark:hover:bg-red-600/80 text-rose-600 dark:text-rose-400 dark:hover:text-white transition"
                       >
                         <XCircle className="w-3.5 h-3.5" />
                       </button>
@@ -285,7 +285,7 @@ export function Processes() {
         }
       >
         <div className="space-y-3">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Changing process priority allocates more or fewer CPU scheduling cycles. Setting priority to High gives precedence over background applications.
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -296,7 +296,7 @@ export function Processes() {
                 className={`p-2.5 rounded-lg border text-xs font-semibold transition ${
                   selectedPriority === prio
                     ? 'bg-brand-600 text-white border-brand-500'
-                    : 'bg-surface-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 dark:bg-surface-900 dark:text-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
                 }`}
               >
                 {prio}
