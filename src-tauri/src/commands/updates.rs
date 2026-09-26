@@ -90,7 +90,10 @@ pub fn open_release_notes(url: Option<String>) -> Result<(), String> {
         if parts.len() == 2 {
             let tag_part = parts[1].split('/').next().unwrap_or("");
             if !tag_part.is_empty() {
-                format!("https://github.com/Heer9042/SystemPilot/releases/tag/{}", tag_part)
+                format!(
+                    "https://github.com/Heer9042/SystemPilot/releases/tag/{}",
+                    tag_part
+                )
             } else {
                 OFFICIAL_RELEASE_URL.to_string()
             }
@@ -263,14 +266,21 @@ pub async fn download_and_verify_update(
             ])
             .creation_flags(CREATE_NO_WINDOW)
             .status()
-            .map_err(|_| "The download could not be completed. Please check your connection and try again.".to_string())?;
+            .map_err(|_| {
+                "The download could not be completed. Please check your connection and try again."
+                    .to_string()
+            })?;
 
         if !status.success() || !target_path.exists() {
-            return Err("The download could not be completed. Please check your connection and try again.".to_string());
+            return Err(
+                "The download could not be completed. Please check your connection and try again."
+                    .to_string(),
+            );
         }
 
-        let metadata = fs::metadata(&target_path)
-            .map_err(|_| "The update could not be completed. Please try again later.".to_string())?;
+        let metadata = fs::metadata(&target_path).map_err(|_| {
+            "The update could not be completed. Please try again later.".to_string()
+        })?;
         let file_size = metadata.len();
 
         let _ = app.emit(
@@ -291,7 +301,10 @@ pub async fn download_and_verify_update(
             let expected_clean = expected.trim().to_lowercase();
             if !expected_clean.is_empty() && calculated_hash != expected_clean {
                 let _ = fs::remove_file(&target_path);
-                return Err("The update verification could not be completed. Please try again later.".to_string());
+                return Err(
+                    "The update verification could not be completed. Please try again later."
+                        .to_string(),
+                );
             }
         }
 
@@ -351,15 +364,21 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
 
         if ext == "msi" {
             std::process::Command::new("msiexec.exe")
-                .args(["/i", path.to_str().ok_or("The file could not be processed.")?, "/qb"])
+                .args([
+                    "/i",
+                    path.to_str().ok_or("The file could not be processed.")?,
+                    "/qb",
+                ])
                 .creation_flags(CREATE_NO_WINDOW)
                 .spawn()
-                .map_err(|_| "The installation could not be completed. Please try again.".to_string())?;
+                .map_err(|_| {
+                    "The installation could not be completed. Please try again.".to_string()
+                })?;
         } else {
             // For NSIS EXE installer: Standard interactive setup launch
-            std::process::Command::new(path)
-                .spawn()
-                .map_err(|_| "The installation could not be completed. Please try again.".to_string())?;
+            std::process::Command::new(path).spawn().map_err(|_| {
+                "The installation could not be completed. Please try again.".to_string()
+            })?;
         }
 
         // Cleanly exit current application so Windows installer can update files

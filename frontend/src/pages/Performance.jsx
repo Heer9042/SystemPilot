@@ -78,23 +78,21 @@ export function Performance() {
           return (
             <Card
               key={plan.guid}
-              className={`p-5 flex flex-col justify-between transition-all ${
-                isActive
+              className={`p-5 flex flex-col justify-between transition-all ${isActive
                   ? 'border-brand-500/60 shadow-lg shadow-brand-500/10 bg-brand-50/20 dark:bg-surface-900'
                   : 'border-slate-200 dark:border-slate-800'
-              }`}
+                }`}
             >
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`p-2.5 rounded-xl border ${
-                        isHigh
+                      className={`p-2.5 rounded-xl border ${isHigh
                           ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
                           : isSaver
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                          : 'bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/15 dark:text-brand-400 dark:border-brand-500/30'
-                      }`}
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                            : 'bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/15 dark:text-brand-400 dark:border-brand-500/30'
+                        }`}
                     >
                       {isHigh ? <Zap className="w-5 h-5" /> : isSaver ? <Leaf className="w-5 h-5" /> : <Gauge className="w-5 h-5" />}
                     </div>
@@ -111,8 +109,8 @@ export function Performance() {
                   {isHigh
                     ? 'Favors maximum processor performance and responsiveness. Disables aggressive core parking and throttling.'
                     : isSaver
-                    ? 'Reduces CPU clock speed and screen energy consumption to preserve battery runtime.'
-                    : 'Standard Windows balanced mode. Dynamically scales CPU frequency based on instantaneous workload.'}
+                      ? 'Reduces CPU clock speed and screen energy consumption to preserve battery runtime.'
+                      : 'Standard Windows balanced mode. Dynamically scales CPU frequency based on instantaneous workload.'}
                 </p>
               </div>
 
