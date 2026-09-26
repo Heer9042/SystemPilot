@@ -29,6 +29,15 @@ pub struct HardwareNetworkItem {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SecurityStatus {
+    pub defender_enabled: bool,
+    pub firewall_enabled: bool,
+    pub uac_enabled: bool,
+    pub secure_boot_status: String,
+    pub warnings_count: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HardwareSummary {
     // Motherboard & Chassis
     pub motherboard_manufacturer: String,
