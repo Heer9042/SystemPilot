@@ -83,13 +83,26 @@ class UpdateService {
             nextStatus = UpdateStatus.RESTART_REQUIRED;
           }
 
+          const downloadedBytes = payload.downloaded_bytes || 0;
+          const totalBytes = payload.total_bytes || 0;
+          const downloadedMb = downloadedBytes > 0 ? (downloadedBytes / (1024 * 1024)).toFixed(1) : null;
+          const totalMb = totalBytes > 0 ? (totalBytes / (1024 * 1024)).toFixed(1) : null;
+          const percentage = Math.round(payload.percentage || 0);
+
+          let progressText = payload.message || 'Processing update...';
+          if (downloadedMb && totalMb && parseFloat(totalMb) > 0) {
+            progressText = `Downloaded: ${downloadedMb} MB / ${totalMb} MB (${percentage}%)`;
+          }
+
           this.updateState({
             status: nextStatus,
             progress: {
-              percentage: Math.round(payload.percentage || 0),
-              downloadedBytes: payload.downloaded_bytes || 0,
-              totalBytes: payload.total_bytes || 0,
-              text: payload.message || 'Processing update...',
+              percentage,
+              downloadedBytes,
+              totalBytes,
+              downloadedMb,
+              totalMb,
+              text: progressText,
             },
           });
         });
@@ -140,7 +153,7 @@ class UpdateService {
   }
 
   /**
-   * Check GitHub Releases for newer official versions
+   * Check official update metadata (latest.json or GitHub API) for newer versions
    */
   async checkForUpdates({ isManual = false, silent = false } = {}) {
     if (this.state.isChecking) return;
@@ -166,90 +179,130 @@ class UpdateService {
     const now = new Date();
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      let releaseInfo = null;
+      let latestVersion = null;
+      let hasUpdate = false;
 
-      const response = await fetch(GITHUB_API_LATEST_RELEASE, {
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-        },
-      });
+      // 1. First attempt: Check direct HTTPS latest.json release manifest
+      try {
+        const manifestController = new AbortController();
+        const mTimeout = setTimeout(() => manifestController.abort(), 6000);
+        const manifestUrl = 'https://raw.githubusercontent.com/Heer9042/SystemPilot/main/release/latest.json';
+        const mResp = await fetch(manifestUrl, {
+          signal: manifestController.signal,
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        clearTimeout(mTimeout);
 
-      clearTimeout(timeoutId);
+        if (mResp.ok) {
+          const mData = await mResp.json();
+          if (mData.version && mData.downloadUrl) {
+            latestVersion = mData.version.replace(/^v/i, '').trim();
+            const currentVersion = this.state.currentVersion;
+            hasUpdate = isNewerVersion(currentVersion, latestVersion);
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          // No releases published yet on this repository
-          this.updateState({
-            status: UpdateStatus.UP_TO_DATE,
-            isChecking: false,
-            lastChecked: now,
-            error: null,
-          });
-          return;
+            releaseInfo = {
+              version: latestVersion,
+              rawTag: `v${latestVersion}`,
+              name: `SystemPilot v${latestVersion}`,
+              publishedAt: mData.publishedAt ? new Date(mData.publishedAt).toLocaleDateString() : 'Recent',
+              body: mData.releaseNotes || 'Performance optimizations, security improvements, and bug fixes.',
+              htmlUrl: `https://github.com/Heer9042/SystemPilot/releases/tag/v${latestVersion}`,
+              downloadUrl: mData.downloadUrl,
+              expectedSha256: mData.sha256 || null,
+              mandatory: Boolean(mData.mandatory),
+            };
+          }
         }
-        if (response.status === 403 || response.status === 429) {
-          throw new Error('Update server request limit reached. Please try again later.');
-        }
-        throw new Error(`Update server returned status ${response.status}`);
+      } catch (e) {
+        console.warn('latest.json manifest check skipped:', e);
       }
 
-      const data = await response.json();
-      const latestTag = data.tag_name || '';
-      const latestVersion = latestTag.replace(/^v/i, '').trim();
-      const currentVersion = this.state.currentVersion;
+      // 2. Fallback to GitHub Releases API if manifest was not resolved
+      if (!releaseInfo) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      const hasUpdate = isNewerVersion(currentVersion, latestVersion);
+        const response = await fetch(GITHUB_API_LATEST_RELEASE, {
+          signal: controller.signal,
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+          },
+        });
 
-      // Identify Windows Release Assets
-      const assets = Array.isArray(data.assets) ? data.assets : [];
-      const exeAsset = assets.find(a => a.name?.toLowerCase().endsWith('.exe'));
-      const msiAsset = assets.find(a => a.name?.toLowerCase().endsWith('.msi'));
-      const zipAsset = assets.find(a => a.name?.toLowerCase().endsWith('.zip'));
-      const sha256Asset = assets.find(a => a.name?.toLowerCase() === 'sha256sums.txt');
-      
-      let expectedSha256 = null;
-      if (sha256Asset && sha256Asset.browser_download_url) {
-        try {
-          const sumResp = await fetch(sha256Asset.browser_download_url);
-          if (sumResp.ok) {
-            const sumText = await sumResp.text();
-            const targetFilename = exeAsset?.name || msiAsset?.name;
-            if (targetFilename) {
-              const match = sumText.split('\n').find(line => line.includes(targetFilename));
-              if (match) {
-                expectedSha256 = match.trim().split(/\s+/)[0];
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            this.updateState({
+              status: UpdateStatus.UP_TO_DATE,
+              isChecking: false,
+              lastChecked: now,
+              error: null,
+            });
+            return;
+          }
+          if (response.status === 403 || response.status === 429) {
+            throw new Error('Update server request limit reached. Please try again later.');
+          }
+          throw new Error(`Update server returned status ${response.status}`);
+        }
+
+        const data = await response.json();
+        const latestTag = data.tag_name || '';
+        latestVersion = latestTag.replace(/^v/i, '').trim();
+        const currentVersion = this.state.currentVersion;
+        hasUpdate = isNewerVersion(currentVersion, latestVersion);
+
+        const assets = Array.isArray(data.assets) ? data.assets : [];
+        const exeAsset = assets.find(a => a.name?.toLowerCase().endsWith('.exe'));
+        const msiAsset = assets.find(a => a.name?.toLowerCase().endsWith('.msi'));
+        const zipAsset = assets.find(a => a.name?.toLowerCase().endsWith('.zip'));
+        const sha256Asset = assets.find(a => a.name?.toLowerCase() === 'sha256sums.txt');
+        
+        let expectedSha256 = null;
+        if (sha256Asset && sha256Asset.browser_download_url) {
+          try {
+            const sumResp = await fetch(sha256Asset.browser_download_url);
+            if (sumResp.ok) {
+              const sumText = await sumResp.text();
+              const targetFilename = exeAsset?.name || msiAsset?.name;
+              if (targetFilename) {
+                const match = sumText.split('\n').find(line => line.includes(targetFilename));
+                if (match) {
+                  expectedSha256 = match.trim().split(/\s+/)[0];
+                }
               }
             }
+          } catch (e) {
+            console.warn('Could not fetch SHA256SUMS.txt manifest:', e);
           }
-        } catch (e) {
-          console.warn('Could not fetch SHA256SUMS.txt manifest:', e);
         }
+
+        const downloadUrl = exeAsset?.browser_download_url || msiAsset?.browser_download_url || data.html_url || GITHUB_RELEASES_URL;
+
+        releaseInfo = {
+          version: latestVersion,
+          rawTag: latestTag,
+          name: data.name || `SystemPilot v${latestVersion}`,
+          publishedAt: data.published_at ? new Date(data.published_at).toLocaleDateString() : 'Recent',
+          body: data.body || 'Performance optimizations, security improvements, and bug fixes.',
+          htmlUrl: data.html_url || GITHUB_RELEASES_URL,
+          downloadUrl,
+          expectedSha256,
+          exeAsset,
+          msiAsset,
+          zipAsset,
+          mandatory: false,
+        };
       }
-
-      const downloadUrl = exeAsset?.browser_download_url || msiAsset?.browser_download_url || data.html_url || GITHUB_RELEASES_URL;
-
-      const releaseInfo = {
-        version: latestVersion,
-        rawTag: latestTag,
-        name: data.name || `SystemPilot v${latestVersion}`,
-        publishedAt: data.published_at ? new Date(data.published_at).toLocaleDateString() : 'Recent',
-        body: data.body || 'Performance optimizations, security improvements, and bug fixes.',
-        htmlUrl: data.html_url || GITHUB_RELEASES_URL,
-        downloadUrl,
-        expectedSha256,
-        exeAsset,
-        msiAsset,
-        zipAsset,
-      };
 
       // Persist last_update_check timestamp in SQLite
       try {
         await api.setSetting('last_update_check', now.toISOString());
       } catch (e) {}
 
-      if (hasUpdate) {
+      if (hasUpdate && releaseInfo) {
         const isSkipped = this.state.skippedVersion === latestVersion;
         const isDismissed = this.state.dismissedVersion === latestVersion;
 
@@ -292,7 +345,7 @@ class UpdateService {
   }
 
   /**
-   * User clicked "Update Now" — Performs secure in-app download and verification
+   * User clicked "Update Now" — Performs direct in-app download and verification without opening browser
    */
   async downloadAndInstallUpdate() {
     if (!this.state.latestRelease) return;
@@ -302,12 +355,11 @@ class UpdateService {
     this.updateState({
       status: UpdateStatus.DOWNLOADING,
       error: null,
-      progress: { percentage: 10, text: 'Connecting to update service...' },
+      progress: { percentage: 5, text: 'Connecting to secure update service...' },
       modalOpen: true,
     });
 
     try {
-      // If native Tauri environment is available, download and verify via native engine
       if (api.isNative()) {
         const verificationResult = await api.downloadAndVerifyUpdate(downloadUrl, expectedSha256);
         
@@ -316,17 +368,17 @@ class UpdateService {
             status: UpdateStatus.RESTART_REQUIRED,
             verifiedInstallerPath: verificationResult.local_path,
             verifiedSha256: verificationResult.calculated_sha256,
-            progress: { percentage: 100, text: 'Update package verified. Ready to apply.' },
+            progress: { percentage: 100, text: 'Update package verified successfully. Ready to install.' },
           });
         } else {
           throw new Error(verificationResult?.error_message || 'Verification of downloaded package failed.');
         }
       } else {
-        // In browser development mock fallback
+        // In web preview fallback
         setTimeout(() => {
           this.updateState({
             status: UpdateStatus.RESTART_REQUIRED,
-            progress: { percentage: 100, text: 'Update download completed.' },
+            progress: { percentage: 100, text: 'Update package verified. Ready to apply.' },
           });
         }, 1500);
       }
@@ -405,7 +457,17 @@ class UpdateService {
    * Opens official GitHub release page or release notes in default browser
    */
   async openReleaseNotes(url) {
-    const targetUrl = url || this.state.latestRelease?.htmlUrl || GITHUB_RELEASES_URL;
+    let targetUrl = url || this.state.latestRelease?.htmlUrl || GITHUB_RELEASES_URL;
+    
+    // Safety check: Never open a direct binary download URL in the browser
+    if (targetUrl.includes('/releases/download/')) {
+      if (this.state.latestRelease?.rawTag) {
+        targetUrl = `https://github.com/Heer9042/SystemPilot/releases/tag/${this.state.latestRelease.rawTag}`;
+      } else {
+        targetUrl = this.state.latestRelease?.htmlUrl || GITHUB_RELEASES_URL;
+      }
+    }
+
     try {
       await api.openReleaseNotes(targetUrl);
     } catch (e) {

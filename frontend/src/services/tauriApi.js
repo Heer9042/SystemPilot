@@ -27,7 +27,14 @@ async function getInvoke() {
 }
 
 export const api = {
-  isNative: () => isTauriEnv,
+  isNative: () => {
+    if (isTauriEnv) return true;
+    if (typeof window !== 'undefined' && (window.__TAURI_INTERNALS__ || window.__TAURI__)) {
+      isTauriEnv = true;
+      return true;
+    }
+    return false;
+  },
 
   async getSystemStats() {
     const inv = await getInvoke();

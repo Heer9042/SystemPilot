@@ -3,12 +3,14 @@ import { Sidebar, NAVIGATION_ITEMS } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { FirstRunWizard } from './components/onboarding/FirstRunWizard';
 import { PageLoading } from './components/common/PageLoading';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { UpdateModal } from './components/updates/UpdateModal';
 import { UpdateBanner } from './components/updates/UpdateBanner';
 import { useSystemStats } from './hooks/useSystemStats';
 import { useTheme } from './hooks/useTheme';
 import { useUpdater } from './hooks/useUpdater';
 import { api } from './services/tauriApi';
+import { getUserErrorMessage } from './services/errorHandler';
 
 // Dashboard loaded directly for instant initial rendering
 import { Dashboard } from './pages/Dashboard';
@@ -77,7 +79,7 @@ export function App() {
       const res = await api.cleanMemory();
       showToast(res.message || 'Memory cleaned successfully!');
     } catch (e) {
-      showToast(`Error cleaning memory: ${e}`);
+      showToast(getUserErrorMessage(e, 'general'));
     }
   };
 
@@ -150,31 +152,33 @@ export function App() {
           </div>
         )}
 
-        {/* Scrollable Viewport with Suspense Boundary */}
+        {/* Scrollable Viewport with Error and Suspense Boundaries */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-          <Suspense fallback={<PageLoading />}>
-            {activeTab === 'dashboard' && (
-              <Dashboard
-                stats={stats}
-                history={history}
-                onCleanMemory={handleQuickClean}
-                setActiveTab={setActiveTab}
-              />
-            )}
-            {activeTab === 'processes' && <Processes />}
-            {activeTab === 'memory' && <Memory stats={stats} />}
-            {activeTab === 'cpu' && <CpuManager stats={stats} history={history} />}
-            {activeTab === 'gpu' && <GpuMonitor />}
-            {activeTab === 'disk' && <DiskMonitor stats={stats} />}
-            {activeTab === 'network' && <NetworkMonitor stats={stats} history={history} />}
-            {activeTab === 'performance' && <Performance />}
-            {activeTab === 'startup' && <StartupManager />}
-            {activeTab === 'cleanup' && <CleanupCenter />}
-            {activeTab === 'hardware' && <HardwareMonitor stats={stats} />}
-            {activeTab === 'security' && <SecurityCenter />}
-            {activeTab === 'benchmark' && <Benchmark />}
-            {activeTab === 'settings' && <Settings theme={theme} toggleTheme={toggleTheme} />}
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading />}>
+              {activeTab === 'dashboard' && (
+                <Dashboard
+                  stats={stats}
+                  history={history}
+                  onCleanMemory={handleQuickClean}
+                  setActiveTab={setActiveTab}
+                />
+              )}
+              {activeTab === 'processes' && <Processes />}
+              {activeTab === 'memory' && <Memory stats={stats} />}
+              {activeTab === 'cpu' && <CpuManager stats={stats} history={history} />}
+              {activeTab === 'gpu' && <GpuMonitor />}
+              {activeTab === 'disk' && <DiskMonitor stats={stats} />}
+              {activeTab === 'network' && <NetworkMonitor stats={stats} history={history} />}
+              {activeTab === 'performance' && <Performance />}
+              {activeTab === 'startup' && <StartupManager />}
+              {activeTab === 'cleanup' && <CleanupCenter />}
+              {activeTab === 'hardware' && <HardwareMonitor stats={stats} />}
+              {activeTab === 'security' && <SecurityCenter />}
+              {activeTab === 'benchmark' && <Benchmark />}
+              {activeTab === 'settings' && <Settings theme={theme} toggleTheme={toggleTheme} />}
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>

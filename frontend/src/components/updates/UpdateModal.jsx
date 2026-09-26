@@ -140,9 +140,9 @@ export function UpdateModal({
                   {status === UpdateStatus.VERIFYING ? <ShieldCheck className="w-5 h-5 text-indigo-500" /> : <Download className="w-5 h-5" />}
                 </div>
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                  {status === UpdateStatus.VERIFYING ? 'Verifying Integrity...' : 'Downloading Official Update...'}
+                  {status === UpdateStatus.VERIFYING ? 'Verifying Integrity...' : `Downloading SystemPilot ${latestRelease?.version ? `v${latestRelease.version}` : ''}`}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {progress?.text || 'Transferring verified update package securely...'}
                 </p>
               </div>
@@ -154,13 +154,13 @@ export function UpdateModal({
                   colorClass="bg-gradient-to-r from-brand-500 to-indigo-500"
                 />
                 <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Status: {status === UpdateStatus.VERIFYING ? 'Verifying package integrity' : 'Downloading'}</span>
+                  <span>{status === UpdateStatus.VERIFYING ? 'Verifying cryptographic signature & hash...' : 'Downloading package directly'}</span>
                   <span className="font-semibold text-slate-700 dark:text-slate-200">{progress?.percentage || 0}%</span>
                 </div>
               </div>
 
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
-                SystemPilot monitoring and diagnostic tools remain active while updates are downloaded in the background.
+              <p className="text-[11px] text-amber-600 dark:text-amber-400/90 text-center font-medium bg-amber-50 dark:bg-amber-950/20 py-1.5 px-2 rounded-lg border border-amber-200/50 dark:border-amber-900/30">
+                Do not close SystemPilot while the update is being prepared.
               </p>
             </div>
           )}
@@ -171,9 +171,9 @@ export function UpdateModal({
               <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Update Verified & Ready!</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Update Ready</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                The official update has been verified and is ready to install. Restart SystemPilot to complete the update.
+                The installer has been verified successfully. Install the update now to complete the upgrade.
               </p>
             </div>
           )}
@@ -208,10 +208,15 @@ export function UpdateModal({
               <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-600 dark:text-rose-400">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Update Encountered an Issue</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-mono text-[11px] bg-rose-50 dark:bg-rose-950/30 p-2 rounded-lg border border-rose-200 dark:border-rose-900/40">
-                {error || 'Could not complete update. Your current installation remains safe and unchanged.'}
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Update Failed</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 max-w-sm mx-auto">
+                SystemPilot could not securely download or verify the update. No changes were made to your installation.
               </p>
+              {error && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-mono bg-rose-50 dark:bg-rose-950/30 p-2 rounded-lg border border-rose-200 dark:border-rose-900/40">
+                  {error}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -239,19 +244,19 @@ export function UpdateModal({
           ) : status === UpdateStatus.RESTART_REQUIRED ? (
             <>
               <Button variant="secondary" size="sm" onClick={onLater}>
-                Restart Later
+                Later
               </Button>
               <Button variant="primary" size="sm" onClick={onRestartNow} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
-                <RotateCcw className="w-3.5 h-3.5" /> Restart & Install Now
+                <RotateCcw className="w-3.5 h-3.5" /> Install Update
               </Button>
             </>
           ) : status === UpdateStatus.ERROR ? (
             <>
               <Button variant="ghost" size="sm" onClick={onClose}>
-                Close
+                Cancel
               </Button>
               <Button variant="primary" size="sm" onClick={onCheckAgain}>
-                Try Again
+                Retry
               </Button>
             </>
           ) : (

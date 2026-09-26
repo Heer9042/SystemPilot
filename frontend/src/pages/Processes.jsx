@@ -5,6 +5,7 @@ import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { api } from '../services/tauriApi';
 import { formatBytes } from '../utils/formatters';
+import { getUserErrorMessage } from '../services/errorHandler';
 import {
   Search,
   RefreshCw,
@@ -103,7 +104,7 @@ export function Processes() {
       setStatusMessage(`Ended process (ID: ${pid})`);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Unable to end process: ${err.message || err}`);
+      setStatusMessage(getUserErrorMessage(err, 'authorization'));
     }
   };
 
@@ -115,7 +116,7 @@ export function Processes() {
       setPriorityModal(false);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Unable to change priority: ${err.message || err}`);
+      setStatusMessage(getUserErrorMessage(err, 'authorization'));
     }
   };
 
@@ -125,7 +126,7 @@ export function Processes() {
       setStatusMessage(`Paused process (ID: ${pid})`);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Unable to pause process: ${err.message || err}`);
+      setStatusMessage(getUserErrorMessage(err, 'authorization'));
     }
   };
 
@@ -135,7 +136,7 @@ export function Processes() {
       setStatusMessage(`Resumed process (ID: ${pid})`);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Unable to resume process: ${err.message || err}`);
+      setStatusMessage(getUserErrorMessage(err, 'authorization'));
     }
   };
 

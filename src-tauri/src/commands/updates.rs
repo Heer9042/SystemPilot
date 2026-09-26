@@ -71,16 +71,34 @@ pub fn get_app_version() -> Result<AppVersionInfo, String> {
 
 #[tauri::command]
 pub fn open_release_notes(url: Option<String>) -> Result<(), String> {
-    let target_url = match url {
+    let raw_url = match url {
         Some(u) => {
             // Security verification: Only permit official repository releases and documentation
             if u.starts_with("https://github.com/Heer9042/SystemPilot") {
                 u
             } else {
-                return Err("Security Violation: Disallowed external URL scheme".to_string());
+                return Err("The requested operation could not be completed.".to_string());
             }
         }
         None => OFFICIAL_RELEASE_URL.to_string(),
+    };
+
+    // Sanitize URL: Never trigger a browser download for .exe, .msi, or .zip files.
+    // Convert direct asset download links (/releases/download/<tag>/<filename>) into the official release notes web page (/releases/tag/<tag>).
+    let target_url = if raw_url.contains("/releases/download/") {
+        let parts: Vec<&str> = raw_url.split("/releases/download/").collect();
+        if parts.len() == 2 {
+            let tag_part = parts[1].split('/').next().unwrap_or("");
+            if !tag_part.is_empty() {
+                format!("https://github.com/Heer9042/SystemPilot/releases/tag/{}", tag_part)
+            } else {
+                OFFICIAL_RELEASE_URL.to_string()
+            }
+        } else {
+            OFFICIAL_RELEASE_URL.to_string()
+        }
+    } else {
+        raw_url
     };
 
     #[cfg(target_os = "windows")]
@@ -94,13 +112,13 @@ pub fn open_release_notes(url: Option<String>) -> Result<(), String> {
         cmd.creation_flags(CREATE_NO_WINDOW);
 
         cmd.spawn()
-            .map_err(|e| format!("Failed to open browser: {}", e))?;
+            .map_err(|_| "The requested operation could not be completed.".to_string())?;
         Ok(())
     }
 
     #[cfg(not(target_os = "windows"))]
     {
-        Err("Unsupported operating system for native URL opening".to_string())
+        Err("The requested operation could not be completed.".to_string())
     }
 }
 
@@ -113,19 +131,18 @@ fn compute_file_sha256(path: &Path) -> Result<String, String> {
 
         let output = std::process::Command::new("certutil")
             .arg("-hashfile")
-            .arg(path.to_str().ok_or("Invalid path")?)
+            .arg(path.to_str().ok_or("The file could not be processed.")?)
             .arg("SHA256")
             .creation_flags(CREATE_NO_WINDOW)
             .output()
-            .map_err(|e| format!("Failed to execute CertUtil hash: {}", e))?;
+            .map_err(|_| "The update verification could not be completed.".to_string())?;
 
         if !output.status.success() {
-            return Err("CertUtil hash computation failed".to_string());
+            return Err("The update verification could not be completed.".to_string());
         }
 
         let text = String::from_utf8_lossy(&output.stdout);
         let lines: Vec<&str> = text.lines().map(|l| l.trim()).collect();
-        // CertUtil output line 1 is "SHA256 hash of ...:", line 2 is the hex string, line 3 is "CertUtil: -hashfile command completed successfully."
         if lines.len() >= 2 {
             let hash = lines[1].replace([' ', '\r', '\n'], "").to_lowercase();
             if hash.len() == 64 {
@@ -142,7 +159,7 @@ fn compute_file_sha256(path: &Path) -> Result<String, String> {
             .args(["-NoProfile", "-NonInteractive", "-Command", &ps_cmd])
             .creation_flags(CREATE_NO_WINDOW)
             .output()
-            .map_err(|e| format!("Failed to run PowerShell Get-FileHash: {}", e))?;
+            .map_err(|_| "The update verification could not be completed.".to_string())?;
 
         if ps_output.status.success() {
             let hash = String::from_utf8_lossy(&ps_output.stdout)
@@ -153,12 +170,12 @@ fn compute_file_sha256(path: &Path) -> Result<String, String> {
             }
         }
 
-        Err("Failed to extract valid 64-character SHA-256 hash".to_string())
+        Err("The update verification could not be completed.".to_string())
     }
 
     #[cfg(not(target_os = "windows"))]
     {
-        Err("Unsupported OS for native hash calculation".to_string())
+        Err("The requested operation could not be completed.".to_string())
     }
 }
 
@@ -173,10 +190,7 @@ pub async fn download_and_verify_update(
     if !download_url.starts_with("https://github.com/Heer9042/SystemPilot/releases/download/")
         && !download_url.starts_with("https://objects.githubusercontent.com/")
     {
-        return Err(
-            "Security notice: Update address is not an official SystemPilot release location."
-                .to_string(),
-        );
+        return Err("The update could not be completed. Please try again later.".to_string());
     }
 
     // 2. Prepare Updates Directory
@@ -185,7 +199,7 @@ pub async fn download_and_verify_update(
         .join("SystemPilot")
         .join("updates");
     fs::create_dir_all(&updates_dir)
-        .map_err(|e| format!("Failed to create updates directory: {}", e))?;
+        .map_err(|_| "The update could not be completed. Please try again later.".to_string())?;
 
     // Determine target filename
     let file_name = if download_url.to_lowercase().ends_with(".msi") {
@@ -208,11 +222,11 @@ pub async fn download_and_verify_update(
             downloaded_bytes: 0,
             total_bytes: 0,
             percentage: 5.0,
-            message: "Connecting to update service...".to_string(),
+            message: "Connecting to secure update service...".to_string(),
         },
     );
 
-    // 4. Download file using native Windows background downloader (PowerShell / BITS / WebClient)
+    // 4. Download file using native Windows background downloader
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
@@ -249,17 +263,14 @@ pub async fn download_and_verify_update(
             ])
             .creation_flags(CREATE_NO_WINDOW)
             .status()
-            .map_err(|e| format!("Failed to download update: {}", e))?;
+            .map_err(|_| "The download could not be completed. Please check your connection and try again.".to_string())?;
 
         if !status.success() || !target_path.exists() {
-            return Err(
-                "The update could not be downloaded. Please check your internet connection."
-                    .to_string(),
-            );
+            return Err("The download could not be completed. Please check your connection and try again.".to_string());
         }
 
-        let metadata =
-            fs::metadata(&target_path).map_err(|e| format!("Failed to read update file: {}", e))?;
+        let metadata = fs::metadata(&target_path)
+            .map_err(|_| "The update could not be completed. Please try again later.".to_string())?;
         let file_size = metadata.len();
 
         let _ = app.emit(
@@ -279,9 +290,8 @@ pub async fn download_and_verify_update(
         if let Some(ref expected) = expected_sha256 {
             let expected_clean = expected.trim().to_lowercase();
             if !expected_clean.is_empty() && calculated_hash != expected_clean {
-                // Remove corrupted/tampered file
                 let _ = fs::remove_file(&target_path);
-                return Err("Integrity verification failed. The update was safely cancelled to protect your system.".to_string());
+                return Err("The update verification could not be completed. Please try again later.".to_string());
             }
         }
 
@@ -292,7 +302,7 @@ pub async fn download_and_verify_update(
                 downloaded_bytes: file_size,
                 total_bytes: file_size,
                 percentage: 100.0,
-                message: "Update verified. Ready to install.".to_string(),
+                message: "Update verified successfully. Ready to install.".to_string(),
             },
         );
 
@@ -307,7 +317,7 @@ pub async fn download_and_verify_update(
 
     #[cfg(not(target_os = "windows"))]
     {
-        Err("In-app updates are currently supported on Windows.".to_string())
+        Err("The requested operation is supported on Windows.".to_string())
     }
 }
 
@@ -325,10 +335,7 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
         .join("SystemPilot")
         .join("updates");
     if !path.starts_with(&allowed_dir) {
-        return Err(
-            "Security notice: Cannot execute update packages outside designated directory."
-                .to_string(),
-        );
+        return Err("The requested operation could not be completed.".to_string());
     }
 
     #[cfg(target_os = "windows")]
@@ -344,16 +351,15 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
 
         if ext == "msi" {
             std::process::Command::new("msiexec.exe")
-                .args(["/i", path.to_str().ok_or("Invalid path")?, "/qb"])
+                .args(["/i", path.to_str().ok_or("The file could not be processed.")?, "/qb"])
                 .creation_flags(CREATE_NO_WINDOW)
                 .spawn()
-                .map_err(|e| format!("Failed to spawn MSI installer: {}", e))?;
+                .map_err(|_| "The installation could not be completed. Please try again.".to_string())?;
         } else {
-            // For NSIS EXE installer: Standard elevated launch
+            // For NSIS EXE installer: Standard interactive setup launch
             std::process::Command::new(path)
-                .creation_flags(CREATE_NO_WINDOW)
                 .spawn()
-                .map_err(|e| format!("Failed to spawn EXE installer: {}", e))?;
+                .map_err(|_| "The installation could not be completed. Please try again.".to_string())?;
         }
 
         // Cleanly exit current application so Windows installer can update files
@@ -367,6 +373,6 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
 
     #[cfg(not(target_os = "windows"))]
     {
-        Err("Unsupported operating system for installer execution.".to_string())
+        Err("The requested operation is supported on Windows.".to_string())
     }
 }

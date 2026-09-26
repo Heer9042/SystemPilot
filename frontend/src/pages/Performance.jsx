@@ -3,6 +3,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { api } from '../services/tauriApi';
+import { getUserErrorMessage } from '../services/errorHandler';
 import { Gauge, Zap, Leaf, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
 export function Performance() {
@@ -32,7 +33,7 @@ export function Performance() {
       setStatusMessage('Power scheme updated successfully in Windows.');
       fetchPlans();
     } catch (err) {
-      setStatusMessage(`Error setting plan: ${err}`);
+      setStatusMessage(getUserErrorMessage(err, 'authorization'));
     }
   };
 

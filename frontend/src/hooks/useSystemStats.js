@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/tauriApi';
+import { getUserErrorMessage } from '../services/errorHandler';
 
 export function useSystemStats(intervalMs = 1000) {
   const [stats, setStats] = useState(null);
@@ -41,7 +42,7 @@ export function useSystemStats(intervalMs = 1000) {
         });
       } catch (err) {
         if (isMounted.current) {
-          setError(err.toString());
+          setError(getUserErrorMessage(err, 'server'));
           setLoading(false);
         }
       } finally {
