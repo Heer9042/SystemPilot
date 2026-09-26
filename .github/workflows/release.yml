@@ -20,10 +20,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      - name: Install Frontend Dependencies
-        run: npm --prefix frontend ci
+      - name: Install Dependencies
+        run: |
+          npm install
+          npm --prefix frontend install
 
       - name: Setup Rust Stable Toolchain (MSVC)
         uses: dtolnay/rust-toolchain@stable

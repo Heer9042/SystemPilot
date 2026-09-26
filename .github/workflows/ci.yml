@@ -18,10 +18,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install Frontend Dependencies
-        run: npm --prefix frontend ci
+        run: npm --prefix frontend install
 
       - name: Build Frontend Assets
         run: npm --prefix frontend run build
