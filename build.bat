@@ -8,7 +8,15 @@ echo         SystemPilot Production .EXE / .MSI Builder
 echo ========================================================
 echo.
 
-:: Ensure MinGW / GCC is in PATH if installed via WinGet
+:: TOOLCHAIN NOTE:
+:: - PRODUCTION RELEASES: Must use x86_64-pc-windows-msvc (GitHub Actions CI does this).
+:: - LOCAL DEVELOPMENT:   MinGW (GNU) toolchain is OK. The .cargo/config.toml now
+::   correctly configures the stack size WITHOUT the broken no-default-manifest.spec
+::   that was causing "TaskDialogIndirect - Entry Point Not Found" at runtime.
+::   tauri-build embeds the manifest via windres which works correctly without that spec.
+::
+:: The MinGW PATH is added below only to ensure 'windres' and 'gcc' are available.
+:: Do NOT add the no-default-manifest.spec spec back to .cargo/config.toml.
 if exist "%LOCALAPPDATA%\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\mingw64\bin" (
     set "PATH=%LOCALAPPDATA%\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\mingw64\bin;%PATH%"
 )

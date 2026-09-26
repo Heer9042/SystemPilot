@@ -1,6 +1,42 @@
+# =============================================================================
+# SystemPilot Cargo Configuration
+# =============================================================================
+#
+# ROOT CAUSE NOTE (DO NOT RE-ADD no-default-manifest.spec):
+# The original config had a GNU linker spec that suppressed default manifest
+# embedding (-specs=no-default-manifest.spec). This caused tauri-build /
+# tauri-winres to fail to embed the Common Controls v6 manifest dependency.
+# Windows then loaded comctl32.dll v5 (which does NOT export TaskDialogIndirect)
+# causing "Entry Point Not Found" at startup. The spec flag is permanently
+# removed from this file.
+#
+# PRODUCTION BUILDS must use x86_64-pc-windows-msvc (GitHub Actions CI).
+# LOCAL DEV BUILDS can use x86_64-pc-windows-gnu (MinGW) — the manifest
+# is correctly embedded via tauri-winres + windres when the spec is absent.
+#
+# To switch to MSVC locally (requires Visual Studio Build Tools):
+#   rustup default stable-x86_64-pc-windows-msvc
+# =============================================================================
+
+[target.x86_64-pc-windows-msvc]
+rustflags = [
+    "-C", "link-arg=/STACK:16777216"
+]
+
+# GNU/MinGW target — used for local development when MSVC Build Tools are not
+# installed. DO NOT re-add the no-default-manifest.spec linker spec here.
+# The spec file was the ROOT CAUSE of "TaskDialogIndirect - Entry Point Not Found".
+# It suppressed the manifest compiled by tauri-winres/windres, causing Windows to
+# load comctl32.dll v5 (which lacks TaskDialogIndirect) instead of v6.
+#
+# The explicit linker path is required to avoid the cargo bin stub (gcc.exe shim)
+# redirecting to LLVM LLD, which cannot find the MinGW GCC runtime libraries.
 [target.x86_64-pc-windows-gnu]
 linker = "C:\\Users\\heerp\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\gcc.exe"
-rustflags = ["-C", "link-arg=-Wl,--stack,16777216"]
+rustflags = [
+    "-C", "link-arg=-Wl,--stack,16777216"
+]
 
 [env]
 RUST_MIN_STACK = "16777216"
+

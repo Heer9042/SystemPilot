@@ -33,7 +33,16 @@ windows-sys = { version = "0.59", features = [
     "Win32_System_Memory",
     "Win32_System_Power",
     "Win32_System_Registry",
-    "Win32_UI_Shell",
     "Win32_Security",
 ] }
 parking_lot = "0.12"
+
+# BUILD SCRIPT CRASH FIX (MinGW/GNU toolchain):
+# Without this, tauri v2.11.6's build script crashes with STATUS_ACCESS_VIOLATION
+# when built in full release mode without debug info. This happens because the
+# highly optimized build-script binary triggers undefined behavior in certain
+# Rust stdlib paths under the MinGW runtime. Enabling debug info in build-override
+# disables the problematic optimizations without affecting the final binary.
+# This has no effect on MSVC builds (which don't have this issue).
+[profile.release.build-override]
+debug = true

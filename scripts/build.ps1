@@ -15,7 +15,13 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptRoot
 Set-Location $projectRoot
 
-# MinGW environment PATH check
+# TOOLCHAIN NOTE:
+# - PRODUCTION RELEASES: Must use x86_64-pc-windows-msvc (GitHub Actions CI enforces this).
+# - LOCAL DEVELOPMENT:   MinGW (GNU) toolchain is OK. The .cargo/config.toml now
+#   correctly configures the stack size WITHOUT the broken no-default-manifest.spec
+#   that caused "TaskDialogIndirect - Entry Point Not Found". tauri-build embeds
+#   the manifest via windres which works correctly without that spec file.
+# - Do NOT add no-default-manifest.spec back to .cargo/config.toml.
 $mingwPath = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\mingw64\bin"
 if (Test-Path $mingwPath) {
     $env:PATH = "$mingwPath;$env:PATH"
