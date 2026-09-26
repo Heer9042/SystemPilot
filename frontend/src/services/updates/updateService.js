@@ -190,9 +190,9 @@ class UpdateService {
           return;
         }
         if (response.status === 403 || response.status === 429) {
-          throw new Error('GitHub API rate limit exceeded. Please try again later.');
+          throw new Error('Update server request limit reached. Please try again later.');
         }
-        throw new Error(`GitHub server returned status ${response.status}`);
+        throw new Error(`Update server returned status ${response.status}`);
       }
 
       const data = await response.json();
@@ -280,7 +280,7 @@ class UpdateService {
       const isAbort = err.name === 'AbortError';
       const userMessage = isAbort
         ? 'Update check timed out. Please verify your internet connection.'
-        : (err.message || 'Unable to connect to update server.');
+        : (err.message || 'Unable to connect to update service.');
 
       this.updateState({
         status: isManual ? UpdateStatus.ERROR : UpdateStatus.IDLE,
@@ -302,7 +302,7 @@ class UpdateService {
     this.updateState({
       status: UpdateStatus.DOWNLOADING,
       error: null,
-      progress: { percentage: 10, text: 'Connecting to official release repository...' },
+      progress: { percentage: 10, text: 'Connecting to update service...' },
       modalOpen: true,
     });
 
@@ -319,14 +319,14 @@ class UpdateService {
             progress: { percentage: 100, text: 'Update package verified. Ready to apply.' },
           });
         } else {
-          throw new Error(verificationResult?.error_message || 'Verification of downloaded binary failed.');
+          throw new Error(verificationResult?.error_message || 'Verification of downloaded package failed.');
         }
       } else {
         // In browser development mock fallback
         setTimeout(() => {
           this.updateState({
             status: UpdateStatus.RESTART_REQUIRED,
-            progress: { percentage: 100, text: 'Simulated update download completed.' },
+            progress: { percentage: 100, text: 'Update download completed.' },
           });
         }, 1500);
       }
@@ -334,7 +334,7 @@ class UpdateService {
       console.error('Update download/verification failed:', e);
       this.updateState({
         status: UpdateStatus.ERROR,
-        error: e.message || 'Failed to securely download and verify the update.',
+        error: e.message || 'Failed to download and verify the update.',
       });
     }
   }
@@ -350,7 +350,7 @@ class UpdateService {
 
     this.updateState({
       status: UpdateStatus.INSTALLING,
-      progress: { percentage: 100, text: 'Launching Windows installer and restarting...' },
+      progress: { percentage: 100, text: 'Starting update installation and restarting SystemPilot...' },
     });
 
     try {
@@ -360,7 +360,7 @@ class UpdateService {
     } catch (e) {
       this.updateState({
         status: UpdateStatus.ERROR,
-        error: `Failed to launch installer: ${e.message || e}`,
+        error: `Could not start update installer: ${e.message || e}`,
       });
     }
   }

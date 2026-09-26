@@ -167,7 +167,7 @@ pub async fn download_and_verify_update(
     if !download_url.starts_with("https://github.com/Heer9042/SystemPilot/releases/download/")
         && !download_url.starts_with("https://objects.githubusercontent.com/")
     {
-        return Err("Security Violation: Update download URL is not an official SystemPilot release asset.".to_string());
+        return Err("Security notice: Update address is not an official SystemPilot release location.".to_string());
     }
 
     // 2. Prepare Updates Directory
@@ -196,7 +196,7 @@ pub async fn download_and_verify_update(
             downloaded_bytes: 0,
             total_bytes: 0,
             percentage: 5.0,
-            message: "Connecting to official GitHub release mirror...".to_string(),
+            message: "Connecting to update service...".to_string(),
         },
     );
 
@@ -224,7 +224,7 @@ pub async fn download_and_verify_update(
                 downloaded_bytes: 0,
                 total_bytes: 0,
                 percentage: 25.0,
-                message: "Downloading installer from official release...".to_string(),
+                message: "Downloading update package...".to_string(),
             },
         );
 
@@ -232,13 +232,13 @@ pub async fn download_and_verify_update(
             .args(["-NoProfile", "-NonInteractive", "-Command", &ps_download_script])
             .creation_flags(CREATE_NO_WINDOW)
             .status()
-            .map_err(|e| format!("Failed to launch download process: {}", e))?;
+            .map_err(|e| format!("Failed to download update: {}", e))?;
 
         if !status.success() || !target_path.exists() {
-            return Err("Failed to download update installer from GitHub.".to_string());
+            return Err("The update could not be downloaded. Please check your internet connection.".to_string());
         }
 
-        let metadata = fs::metadata(&target_path).map_err(|e| format!("Failed to read downloaded file metadata: {}", e))?;
+        let metadata = fs::metadata(&target_path).map_err(|e| format!("Failed to read update file: {}", e))?;
         let file_size = metadata.len();
 
         let _ = app.emit(
@@ -248,7 +248,7 @@ pub async fn download_and_verify_update(
                 downloaded_bytes: file_size,
                 total_bytes: file_size,
                 percentage: 90.0,
-                message: "Verifying cryptographic SHA-256 integrity...".to_string(),
+                message: "Verifying update package integrity...".to_string(),
             },
         );
 
@@ -260,10 +260,7 @@ pub async fn download_and_verify_update(
             if !expected_clean.is_empty() && calculated_hash != expected_clean {
                 // Remove corrupted/tampered file
                 let _ = fs::remove_file(&target_path);
-                return Err(format!(
-                    "Integrity verification failed! Expected SHA-256 '{}' but computed '{}'. The update was aborted.",
-                    expected_clean, calculated_hash
-                ));
+                return Err("Integrity verification failed. The update was safely cancelled to protect your system.".to_string());
             }
         }
 
@@ -274,7 +271,7 @@ pub async fn download_and_verify_update(
                 downloaded_bytes: file_size,
                 total_bytes: file_size,
                 percentage: 100.0,
-                message: "Integrity verified. Ready to install.".to_string(),
+                message: "Update verified. Ready to install.".to_string(),
             },
         );
 
@@ -289,7 +286,7 @@ pub async fn download_and_verify_update(
 
     #[cfg(not(target_os = "windows"))]
     {
-        Err("Unsupported operating system for in-app updates.".to_string())
+        Err("In-app updates are currently supported on Windows.".to_string())
     }
 }
 
@@ -298,14 +295,14 @@ pub async fn download_and_verify_update(
 pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Result<(), String> {
     let path = PathBuf::from(&installer_path);
     if !path.exists() {
-        return Err("Installer binary does not exist at specified path.".to_string());
+        return Err("The update package could not be found.".to_string());
     }
 
     // Validate path is inside SystemPilot updates folder
     let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_else(|_| ".".to_string());
     let allowed_dir = PathBuf::from(local_app_data).join("SystemPilot").join("updates");
     if !path.starts_with(&allowed_dir) {
-        return Err("Security Violation: Cannot execute installers outside designated application updates directory.".to_string());
+        return Err("Security notice: Cannot execute update packages outside designated directory.".to_string());
     }
 
     #[cfg(target_os = "windows")]

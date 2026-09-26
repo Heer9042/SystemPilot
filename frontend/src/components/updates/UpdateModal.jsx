@@ -52,7 +52,7 @@ export function UpdateModal({
               <h2 id="update-modal-title" className="text-sm font-bold text-slate-800 dark:text-slate-100">
                 SystemPilot Updates
               </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Official GitHub Release Channel</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Official Update Channel</p>
             </div>
           </div>
           <button
@@ -70,8 +70,8 @@ export function UpdateModal({
           {status === UpdateStatus.CHECKING && (
             <div className="py-8 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-brand-600 dark:text-brand-400 animate-spin mx-auto" />
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Checking GitHub for updates...</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Comparing with current version v{currentVersion}</p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Checking for updates...</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Comparing with installed version v{currentVersion}</p>
             </div>
           )}
 
@@ -83,7 +83,7 @@ export function UpdateModal({
               </div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">You're completely up to date!</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                SystemPilot is running the latest official build (<strong className="text-slate-800 dark:text-slate-200 font-semibold">v{currentVersion}</strong>). No action is needed.
+                SystemPilot is running the latest official version (<strong className="text-slate-800 dark:text-slate-200 font-semibold">v{currentVersion}</strong>). No action is needed.
               </p>
             </div>
           )}
@@ -98,7 +98,7 @@ export function UpdateModal({
                 </div>
                 <div className="text-slate-400 dark:text-slate-500 font-mono text-sm">→</div>
                 <div className="text-right">
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block font-semibold">New Release Available</span>
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block font-semibold">New Version Available</span>
                   <span className="text-xs font-bold text-brand-600 dark:text-brand-300">v{latestRelease.version}</span>
                 </div>
               </div>
@@ -123,10 +123,10 @@ export function UpdateModal({
                   onClick={() => onOpenReleaseNotes(latestRelease.htmlUrl)}
                   className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1.5 font-medium hover:underline"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" /> View Full Release Notes on GitHub
+                  <ExternalLink className="w-3.5 h-3.5" /> View Full Release Notes
                 </button>
                 <span className="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
-                  <Lock className="w-3 h-3 text-emerald-500" /> SHA-256 Verified
+                  <Lock className="w-3 h-3 text-emerald-500" /> Cryptographically Verified
                 </span>
               </div>
             </div>
@@ -143,7 +143,7 @@ export function UpdateModal({
                   {status === UpdateStatus.VERIFYING ? 'Verifying Integrity...' : 'Downloading Official Update...'}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {progress?.text || 'Transferring verified release package over HTTPS...'}
+                  {progress?.text || 'Transferring verified update package securely...'}
                 </p>
               </div>
 
@@ -154,13 +154,13 @@ export function UpdateModal({
                   colorClass="bg-gradient-to-r from-brand-500 to-indigo-500"
                 />
                 <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Status: {status === UpdateStatus.VERIFYING ? 'SHA-256 Verification' : 'Streaming'}</span>
+                  <span>Status: {status === UpdateStatus.VERIFYING ? 'Verifying package integrity' : 'Downloading'}</span>
                   <span className="font-semibold text-slate-700 dark:text-slate-200">{progress?.percentage || 0}%</span>
                 </div>
               </div>
 
               <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
-                SystemPilot dashboard and telemetry remain active while updates are downloaded in the background.
+                SystemPilot monitoring and diagnostic tools remain active while updates are downloaded in the background.
               </p>
             </div>
           )}
@@ -173,7 +173,7 @@ export function UpdateModal({
               </div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Update Verified & Ready!</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                The official update has been cryptographically verified and is ready to install. Restart SystemPilot to apply the update.
+                The official update has been verified and is ready to install. Restart SystemPilot to complete the update.
               </p>
             </div>
           )}
@@ -182,7 +182,7 @@ export function UpdateModal({
           {status === UpdateStatus.INSTALLING && (
             <div className="py-6 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-brand-600 dark:text-brand-400 animate-spin mx-auto" />
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Launching Windows Installer...</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Installing SystemPilot Update...</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 SystemPilot is restarting to finish applying the upgrade.
               </p>
@@ -197,7 +197,7 @@ export function UpdateModal({
               </div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Offline Mode</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                Unable to reach GitHub update servers. All system monitoring and performance features continue working normally offline.
+                Unable to reach the update service. All system monitoring and performance features continue working normally offline.
               </p>
             </div>
           )}

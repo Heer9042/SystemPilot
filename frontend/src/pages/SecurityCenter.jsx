@@ -24,10 +24,10 @@ export function SecurityCenter() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Windows Security & Defensive Posture
+            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> System Security Status
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Defensive security status, Windows Defender, Firewall, and UAC protection
+            Status of Windows Defender, Firewall, and User Account Control
           </p>
         </div>
       </div>
@@ -43,7 +43,7 @@ export function SecurityCenter() {
             <Badge variant="success" size="xs">Active</Badge>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Windows Defender Real-time antivirus protection is operational.
+            Windows Defender real-time antivirus protection is operational.
           </p>
         </Card>
 
@@ -59,7 +59,7 @@ export function SecurityCenter() {
             </Badge>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Domain, Private, and Public network firewall packet filtering active.
+            Network firewall protection is active for Domain, Private, and Public profiles.
           </p>
         </Card>
 
@@ -73,7 +73,7 @@ export function SecurityCenter() {
             <Badge variant="success" size="xs">Protected</Badge>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            UAC elevation prompts prevent unauthorized administrative privilege escalation.
+            User Account Control prompts help prevent unauthorized changes to your computer.
           </p>
         </Card>
       </div>

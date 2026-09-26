@@ -44,7 +44,7 @@ export const api = {
   async cleanMemory() {
     const inv = await getInvoke();
     if (inv) return await inv('clean_memory');
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async getProcesses() {
@@ -56,31 +56,31 @@ export const api = {
   async terminateProcess(pid) {
     const inv = await getInvoke();
     if (inv) return await inv('terminate_process', { pid });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async setProcessPriority(pid, priority) {
     const inv = await getInvoke();
     if (inv) return await inv('set_process_priority', { pid, priority });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async setProcessAffinity(pid, affinityMask) {
     const inv = await getInvoke();
     if (inv) return await inv('set_process_affinity', { pid, affinityMask });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async suspendProcess(pid) {
     const inv = await getInvoke();
     if (inv) return await inv('suspend_process', { pid });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async resumeProcess(pid) {
     const inv = await getInvoke();
     if (inv) return await inv('resume_process', { pid });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async getCpuDetailedInfo() {
@@ -116,7 +116,7 @@ export const api = {
   async setPowerPlan(guid) {
     const inv = await getInvoke();
     if (inv) return await inv('set_power_plan', { guid });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async getStartupItems() {
@@ -134,7 +134,7 @@ export const api = {
   async executeCleanup(categoryIds, emptyRecycleBin = false) {
     const inv = await getInvoke();
     if (inv) return await inv('execute_cleanup', { categoryIds, emptyRecycleBin });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async listenCleanupProgress(callback) {
@@ -172,31 +172,31 @@ export const api = {
   async runCpuBenchmark() {
     const inv = await getInvoke();
     if (inv) return await inv('run_cpu_benchmark');
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async runMemoryBenchmark() {
     const inv = await getInvoke();
     if (inv) return await inv('run_memory_benchmark');
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async runDiskBenchmark() {
     const inv = await getInvoke();
     if (inv) return await inv('run_disk_benchmark');
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async startCpuStress(durationSeconds = 30) {
     const inv = await getInvoke();
     if (inv) return await inv('start_cpu_stress', { durationSeconds });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async stopCpuStress() {
     const inv = await getInvoke();
     if (inv) return await inv('stop_cpu_stress');
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async getBenchmarkHistory() {
@@ -214,7 +214,7 @@ export const api = {
   async setSetting(key, value) {
     const inv = await getInvoke();
     if (inv) return await inv('set_setting', { key, value: String(value) });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async minimizeWindow() {
@@ -274,13 +274,13 @@ export const api = {
   async downloadAndVerifyUpdate(downloadUrl, expectedSha256 = null) {
     const inv = await getInvoke();
     if (inv) return await inv('download_and_verify_update', { downloadUrl, expectedSha256 });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async installUpdateAndRestart(installerPath) {
     const inv = await getInvoke();
     if (inv) return await inv('install_update_and_restart', { installerPath });
-    throw new Error('Tauri backend unavailable');
+    throw new Error('System service is temporarily unavailable');
   },
 
   async listenUpdateProgress(callback) {

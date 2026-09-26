@@ -112,14 +112,14 @@ export function Settings({ theme, toggleTheme }) {
             Preferences & Configuration
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Customize telemetry refresh rates, background tray behavior, alert thresholds, and update channels
+            Customize system monitoring interval, system tray behavior, alert thresholds, and updates
           </p>
         </div>
 
         {savedMessage && (
           <div className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-medium animate-fadeIn">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Saved to local SQLite database</span>
+            <span>Settings saved successfully</span>
           </div>
         )}
       </div>
@@ -148,7 +148,7 @@ export function Settings({ theme, toggleTheme }) {
             <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-brand-500 dark:text-brand-400" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">SystemPilot Updates & Release Channel</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">SystemPilot Updates</h3>
               </div>
               <span className="text-[11px] font-mono font-bold bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/30 text-brand-700 dark:text-brand-300 px-2.5 py-0.5 rounded-full">
                 v{currentVersion}
@@ -162,7 +162,7 @@ export function Settings({ theme, toggleTheme }) {
               </div>
               <div className="p-3 bg-white/80 dark:bg-surface-950/60 rounded-xl border border-slate-200 dark:border-slate-800/80">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Release Channel</span>
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Official GitHub Stable</span>
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Official Release Channel</span>
               </div>
               <div className="p-3 bg-white/80 dark:bg-surface-950/60 rounded-xl border border-slate-200 dark:border-slate-800/80">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Last Update Check</span>
@@ -178,7 +178,7 @@ export function Settings({ theme, toggleTheme }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   {status === UpdateStatus.CHECKING && (
                     <span className="text-xs text-brand-600 dark:text-brand-400 flex items-center gap-1.5 font-medium">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking official GitHub releases...
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking for updates...
                     </span>
                   )}
                   {status === UpdateStatus.UP_TO_DATE && (
@@ -213,7 +213,7 @@ export function Settings({ theme, toggleTheme }) {
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  SystemPilot checks GitHub Releases for cryptographically verified production builds.
+                  SystemPilot downloads verified, secure updates directly from the official release service.
                 </p>
               </div>
 
@@ -261,12 +261,12 @@ export function Settings({ theme, toggleTheme }) {
           </Card>
         )}
 
-        {/* 2. Appearance & Telemetry Polling */}
+        {/* 2. Appearance & System Monitoring */}
         {showSection('general') && (
           <Card className="space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
               <Moon className="w-4 h-4 text-brand-500 dark:text-brand-400" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Appearance & Telemetry</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Appearance & System Monitoring</h3>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 py-2 border-b border-slate-200 dark:border-slate-800/60">
@@ -282,15 +282,15 @@ export function Settings({ theme, toggleTheme }) {
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 py-2">
               <div>
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200 block">Telemetry Refresh Rate</span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Adjust polling interval for minimal CPU impact</span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200 block">Monitoring Refresh Interval</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">Adjust update frequency to balance responsiveness and system resource usage</span>
               </div>
               <select
                 value={settings.refresh_interval_ms}
                 onChange={(e) => handleUpdate('refresh_interval_ms', e.target.value)}
                 className="bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-brand-500 self-start sm:self-auto w-full sm:w-auto font-mono"
               >
-                <option value="500">500 ms (Fast Telemetry)</option>
+                <option value="500">500 ms (High Precision)</option>
                 <option value="1000">1000 ms (Recommended)</option>
                 <option value="2000">2000 ms (Low CPU)</option>
                 <option value="5000">5000 ms (Battery Saver)</option>
@@ -362,7 +362,7 @@ export function Settings({ theme, toggleTheme }) {
                   enabled={settings.notify_disk_low === 'true'}
                   onChange={(val) => handleUpdate('notify_disk_low', val)}
                   label="Low Disk Space Alert"
-                  description="Notify when storage partition &lt; 10% free"
+                  description="Notify when storage partition < 10% free"
                 />
               </div>
             </div>
@@ -382,7 +382,7 @@ export function Settings({ theme, toggleTheme }) {
                     SystemPilot <span className="text-xs font-mono font-normal text-slate-500 dark:text-slate-400">v{currentVersion}</span>
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Windows System Monitoring & Performance Suite · Built with Tauri 2 & Rust
+                    Windows System Monitoring & Performance Suite · Native Desktop Utility
                   </p>
                 </div>
               </div>
@@ -394,11 +394,11 @@ export function Settings({ theme, toggleTheme }) {
             <div className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed space-y-2">
               <p>
                 SystemPilot is an open-source, local-first Windows performance utility distributed under the{' '}
-                <strong className="text-slate-900 dark:text-slate-200 font-semibold">MIT License</strong>. All hardware telemetry, process monitoring,
+                <strong className="text-slate-900 dark:text-slate-200 font-semibold">MIT License</strong>. All system diagnostics, process management,
                 and memory optimizations remain strictly on your local device.
               </p>
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                <em>Disclaimer: Windows, Windows Defender, and PowerShell are trademarks of Microsoft Corporation. SystemPilot is an independent utility and is not affiliated with or endorsed by Microsoft Corporation.</em>
+                <em>Disclaimer: Windows and Windows Defender are trademarks of Microsoft Corporation. SystemPilot is an independent utility and is not affiliated with or endorsed by Microsoft Corporation.</em>
               </p>
             </div>
 
@@ -408,7 +408,7 @@ export function Settings({ theme, toggleTheme }) {
                 onClick={() => openReleaseNotes('https://github.com/Heer9042/SystemPilot')}
                 className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-900 dark:hover:bg-surface-850 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 flex items-center gap-1.5 transition-colors font-medium"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" /> GitHub Repository
+                <ExternalLink className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" /> Project Homepage
               </button>
               <button
                 type="button"

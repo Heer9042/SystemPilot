@@ -127,16 +127,16 @@ export function CleanupCenter() {
         <div className="space-y-1 max-w-xl">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-brand-500 dark:text-brand-400" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Safe System Cleanup Center</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">System Cleanup</h2>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            Scan and safely reclaim disk space from temporary application caches, Windows crash dumps, and stale thumbnail databases. User documents, downloads, and personal files are never touched.
+            Scan and safely reclaim disk space from temporary application data, Windows error reports, and unused system caches. Personal documents and files are never modified.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <Button variant="secondary" size="md" icon={RefreshCw} disabled={scanning || cleaning} onClick={runScan}>
-            {scanning ? 'Scanning...' : 'Scan Junk Files'}
+            {scanning ? 'Scanning...' : 'Scan for Unused Files'}
           </Button>
           <Button
             variant="primary"
@@ -179,7 +179,7 @@ export function CleanupCenter() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    Cleaning Junk Files & Caches
+                    Cleaning Temporary Files
                     <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 font-mono">
                       {cleanupProgress.stage || 'In Progress'}
                     </span>
@@ -239,7 +239,7 @@ export function CleanupCenter() {
       {/* Categories List */}
       <Card className="p-0 overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
-          <span className="font-bold text-slate-800 dark:text-slate-200">Cleanable System Caches</span>
+          <span className="font-bold text-slate-800 dark:text-slate-200">Temporary & Unused Files</span>
           <span className="font-mono text-slate-500 dark:text-slate-400">
             Total Potential Space: <strong className="text-brand-600 dark:text-brand-300">{formatBytes(scanResult?.total_bytes || 0)}</strong>
           </span>

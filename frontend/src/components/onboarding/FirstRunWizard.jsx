@@ -107,7 +107,7 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
               <div className="space-y-1.5">
                 <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Welcome to SystemPilot</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
-                  SystemPilot helps you monitor, manage, and safely optimize your Windows system resources with high-precision native telemetry.
+                  SystemPilot helps you monitor, manage, and safely optimize your Windows system resources in real time.
                 </p>
               </div>
               <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800/80 max-w-md mx-auto text-left text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2.5">
@@ -162,13 +162,13 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
             <div className="space-y-4 animate-fadeIn">
               <div>
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Monitoring Behavior</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Choose telemetry polling frequency and CPU resource overhead.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Choose monitoring update frequency and system resource balance.</p>
               </div>
               <div className="space-y-2.5 pt-2">
                 {[
-                  { id: 'standard', label: 'Standard (1 second)', badge: 'Recommended', desc: 'Balanced polling interval with negligible CPU usage (<0.2%).' },
+                  { id: 'standard', label: 'Standard (1 second)', badge: 'Recommended', desc: 'Balanced update interval with negligible resource usage (<0.2%).' },
                   { id: 'minimal', label: 'Minimal / Battery Saver (2 seconds)', desc: 'Optimized for laptops on battery power to conserve energy.' },
-                  { id: 'advanced', label: 'High Refresh (500 ms)', desc: 'Ultra-fast realtime hardware graphs for benchmarking and testing.' },
+                  { id: 'advanced', label: 'High Refresh (500 ms)', desc: 'Ultra-fast realtime hardware graphs for testing and diagnostics.' },
                 ].map((m) => {
                   const isSelected = config.monitoringMode === m.id;
                   return (

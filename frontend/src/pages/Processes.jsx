@@ -94,16 +94,16 @@ export function Processes() {
 
   const handleTerminate = async (pid, isCritical) => {
     if (isCritical) {
-      if (!window.confirm('WARNING: This is a critical system process. Terminating it may cause Windows to restart or crash. Continue?')) {
+      if (!window.confirm('Warning: This is an essential Windows system application. Ending it may cause Windows to restart. Do you want to continue?')) {
         return;
       }
     }
     try {
       await api.terminateProcess(pid);
-      setStatusMessage(`Terminated process PID ${pid}`);
+      setStatusMessage(`Ended process (ID: ${pid})`);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Error: ${err}`);
+      setStatusMessage(`Unable to end process: ${err.message || err}`);
     }
   };
 
@@ -115,27 +115,27 @@ export function Processes() {
       setPriorityModal(false);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Priority change error: ${err}`);
+      setStatusMessage(`Unable to change priority: ${err.message || err}`);
     }
   };
 
   const handleSuspend = async (pid) => {
     try {
       await api.suspendProcess(pid);
-      setStatusMessage(`Suspended PID ${pid}`);
+      setStatusMessage(`Paused process (ID: ${pid})`);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Suspend error: ${err}`);
+      setStatusMessage(`Unable to pause process: ${err.message || err}`);
     }
   };
 
   const handleResume = async (pid) => {
     try {
       await api.resumeProcess(pid);
-      setStatusMessage(`Resumed PID ${pid}`);
+      setStatusMessage(`Resumed process (ID: ${pid})`);
       fetchProcesses();
     } catch (err) {
-      setStatusMessage(`Resume error: ${err}`);
+      setStatusMessage(`Unable to resume process: ${err.message || err}`);
     }
   };
 
@@ -147,7 +147,7 @@ export function Processes() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search processes, PID, or path..."
+            placeholder="Search applications, process ID, or location..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 transition"
@@ -156,7 +156,7 @@ export function Processes() {
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <Badge variant="brand" size="md">
-            {filteredProcesses.length} Processes
+            {filteredProcesses.length} Running Applications
           </Badge>
           <Button variant="secondary" size="sm" icon={RefreshCw} onClick={fetchProcesses}>
             Refresh
@@ -182,7 +182,7 @@ export function Processes() {
                   className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
                 >
                   <div className="flex items-center gap-1">
-                    Process Name
+                    Application Name
                     {sortField === 'name' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                   </div>
                 </th>
@@ -191,7 +191,7 @@ export function Processes() {
                   className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
                 >
                   <div className="flex items-center gap-1">
-                    PID
+                    Process ID
                     {sortField === 'pid' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                   </div>
                 </th>

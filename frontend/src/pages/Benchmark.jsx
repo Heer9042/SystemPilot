@@ -94,10 +94,10 @@ export function Benchmark() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Timer className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> System Hardware Benchmark Suite
+            <Timer className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> Performance Benchmark
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Real multi-threaded mathematical, memory throughput, and disk IO measurements
+            Measure processor performance, memory transfer rate, and storage read/write speed
           </p>
         </div>
       </div>
@@ -110,12 +110,12 @@ export function Benchmark() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Cpu className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">CPU Multi-Core</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Processor Performance</h3>
               </div>
               {cpuResult && <Badge variant="brand" size="sm">{Math.round(cpuResult.score)} pts</Badge>}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Evaluates parallel arithmetic calculation throughput across all logical cores.
+              Evaluates multi-core arithmetic processing calculation speed across all available cores.
             </p>
             {cpuResult && (
               <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-300">
@@ -132,7 +132,7 @@ export function Benchmark() {
             onClick={handleCpuBench}
             fullWidth
           >
-            {runningTest === 'cpu' ? 'Computing...' : 'Run CPU Test'}
+            {runningTest === 'cpu' ? 'Testing...' : 'Run Processor Test'}
           </Button>
         </Card>
 
@@ -142,12 +142,12 @@ export function Benchmark() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Memory Bandwidth</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Memory Speed</h3>
               </div>
               {memResult && <Badge variant="brand" size="sm">{Math.round(memResult.score)} pts</Badge>}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Measures sequential buffer read/write transfer throughput (MB/s).
+              Measures memory transfer read and write throughput in MB/s.
             </p>
             {memResult && (
               <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-300">
@@ -164,7 +164,7 @@ export function Benchmark() {
             onClick={handleMemBench}
             fullWidth
           >
-            {runningTest === 'mem' ? 'Benchmarking...' : 'Run Memory Test'}
+            {runningTest === 'mem' ? 'Testing...' : 'Run Memory Test'}
           </Button>
         </Card>
 
@@ -174,7 +174,7 @@ export function Benchmark() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <HardDrive className="w-5 h-5 text-amber-500 dark:text-amber-400" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Disk Sequential IO</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Storage Speed</h3>
               </div>
               {diskResult && <Badge variant="brand" size="sm">{Math.round(diskResult.score)} pts</Badge>}
             </div>

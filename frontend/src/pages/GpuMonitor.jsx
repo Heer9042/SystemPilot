@@ -99,7 +99,7 @@ export function GpuMonitor() {
                 <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800">
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Thermal Sensor</span>
                   <span className="text-sm font-bold font-mono text-slate-700 dark:text-slate-300">
-                    {gpu.temperature_celsius ? `${gpu.temperature_celsius}°C` : 'WDDM Telemetry'}
+                    {gpu.temperature_celsius ? `${gpu.temperature_celsius}°C` : 'Standard Sensor'}
                   </span>
                 </div>
               </div>

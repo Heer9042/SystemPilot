@@ -104,14 +104,14 @@ export function Memory({ stats }) {
         <div className="space-y-2 max-w-xl">
           <div className="flex items-center gap-2">
             <Layers className="w-6 h-6 text-brand-500 dark:text-brand-400" />
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">Windows Memory Manager & Optimizer</h2>
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">Memory Management</h2>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            SystemPilot uses official Windows memory management APIs to safely trim non-essential application working sets and flush dormant cached pages back to system standby pool without terminating apps.
+            SystemPilot safely optimizes memory by releasing unused memory allocations back to the system standby pool without closing running applications.
           </p>
           <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 dark:text-slate-400">
             <Info className="w-3.5 h-3.5 text-brand-500 dark:text-brand-400" />
-            <span>Safe & Non-destructive • No background processes are terminated</span>
+            <span>Safe & Non-destructive • Running applications continue without interruption</span>
           </div>
         </div>
 
@@ -125,9 +125,9 @@ export function Memory({ stats }) {
             onClick={handleCleanMemory}
             className="w-56 h-14 text-base font-bold shadow-2xl shadow-brand-600/40 animate-glow"
           >
-            {cleaning ? 'CLEANING...' : 'CLEAN MEMORY'}
+            {cleaning ? 'OPTIMIZING...' : 'OPTIMIZE MEMORY'}
           </Button>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">Click to release unreferenced RAM</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Click to optimize available memory</span>
         </div>
       </Card>
 
