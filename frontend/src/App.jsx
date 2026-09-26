@@ -45,6 +45,7 @@ export function App() {
     bannerVisible,
     checkForUpdates,
     downloadAndInstallUpdate,
+    restartAndApplyUpdate,
     dismissUpdate,
     skipVersion,
     openReleaseNotes,
@@ -103,6 +104,7 @@ export function App() {
         error={updaterError}
         progress={updaterProgress}
         onUpdateNow={downloadAndInstallUpdate}
+        onRestartNow={restartAndApplyUpdate}
         onLater={dismissUpdate}
         onSkipVersion={skipVersion}
         onCheckAgain={() => checkForUpdates({ isManual: true })}

@@ -270,4 +270,30 @@ export const api = {
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   },
+
+  async downloadAndVerifyUpdate(downloadUrl, expectedSha256 = null) {
+    const inv = await getInvoke();
+    if (inv) return await inv('download_and_verify_update', { downloadUrl, expectedSha256 });
+    throw new Error('Tauri backend unavailable');
+  },
+
+  async installUpdateAndRestart(installerPath) {
+    const inv = await getInvoke();
+    if (inv) return await inv('install_update_and_restart', { installerPath });
+    throw new Error('Tauri backend unavailable');
+  },
+
+  async listenUpdateProgress(callback) {
+    try {
+      const { listen } = await import('@tauri-apps/api/event');
+      return await listen('update-progress', (event) => {
+        if (callback && event && event.payload) {
+          callback(event.payload);
+        }
+      });
+    } catch (e) {
+      console.warn('Tauri update progress listener not available:', e);
+      return null;
+    }
+  },
 };

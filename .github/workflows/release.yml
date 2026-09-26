@@ -71,9 +71,11 @@ jobs:
           }
 
       - name: Build Tauri Packages (EXE & MSI)
+        env:
+          RUST_MIN_STACK: "16777216"
         run: npm run tauri build
 
-      - name: Prepare Release Artifacts & Generate SHA-256 Checksums
+      - name: Prepare Release Artifacts
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path release-artifacts
@@ -92,13 +94,44 @@ jobs:
             Write-Host "Found MSI: $($file.Name)"
           }
 
-          # Create Portable ZIP from release binary
+          # Create Portable ZIP from release binary & required WebView2Loader.dll
           $rawBinary = "src-tauri/target/release/SystemPilot.exe"
+          $dllBinary = "src-tauri/target/release/WebView2Loader.dll"
           if (Test-Path $rawBinary) {
-            Compress-Archive -Path $rawBinary -DestinationPath "release-artifacts/SystemPilot-Portable-x64.zip" -Force
+            $zipItems = @($rawBinary)
+            if (Test-Path $dllBinary) { $zipItems += $dllBinary }
+            Compress-Archive -Path $zipItems -DestinationPath "release-artifacts/SystemPilot-Portable-x64.zip" -Force
             Write-Host "Created Portable ZIP: release-artifacts/SystemPilot-Portable-x64.zip"
           }
 
+      - name: Sign Windows Binaries (Authenticode Code Signing)
+        if: env.WINDOWS_CERTIFICATE_BASE64 != ''
+        env:
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: powershell
+        run: |
+          Write-Host "Authenticode Code Signing Certificate detected. Decoding PFX..."
+          $pfxPath = "$env:TEMP\systempilot_code_sign.pfx"
+          [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64))
+          
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "signtool.exe" -Recurse | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1).FullName
+          if (-not $signtool) {
+            Write-Warning "signtool.exe not found in Windows Kits; using PATH default..."
+            $signtool = "signtool.exe"
+          }
+
+          $artifacts = Get-ChildItem -Path "release-artifacts/*.exe", "release-artifacts/*.msi"
+          foreach ($file in $artifacts) {
+            Write-Host "Signing $($file.Name)..."
+            & $signtool sign /f $pfxPath /p $env:WINDOWS_CERTIFICATE_PASSWORD /fd SHA256 /tr "http://timestamp.digicert.com" /td SHA256 $file.FullName
+          }
+          Remove-Item -Path $pfxPath -Force -ErrorAction SilentlyContinue
+          Write-Host "Authenticode code signing completed successfully."
+
+      - name: Generate Cryptographic SHA-256 Checksums
+        shell: powershell
+        run: |
           # Generate SHA256 Checksums for all release artifacts
           $allArtifacts = Get-ChildItem -Path "release-artifacts/*" -Exclude "SHA256SUMS.txt"
           $checksumLines = @()

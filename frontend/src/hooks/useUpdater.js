@@ -23,6 +23,7 @@ export function useUpdater() {
     ...state,
     checkForUpdates: (opts) => updateService.checkForUpdates(opts),
     downloadAndInstallUpdate: () => updateService.downloadAndInstallUpdate(),
+    restartAndApplyUpdate: () => updateService.restartAndApplyUpdate(),
     dismissUpdate: () => updateService.dismissUpdate(),
     skipVersion: (ver) => updateService.skipVersion(ver),
     openReleaseNotes: (url) => updateService.openReleaseNotes(url),

@@ -79,6 +79,8 @@ pub fn run() {
             // Updates & Versioning
             commands::updates::get_app_version,
             commands::updates::open_release_notes,
+            commands::updates::download_and_verify_update,
+            commands::updates::install_update_and_restart,
         ])
         .setup(|app| {
             // Setup background monitoring thread for Auto RAM clean

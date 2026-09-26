@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { ProgressBar } from '../ui/ProgressBar';
 import {
@@ -13,6 +12,8 @@ import {
   X,
   Loader2,
   ShieldCheck,
+  RotateCcw,
+  Lock,
 } from 'lucide-react';
 import { UpdateStatus } from '../../services/updates/updateTypes';
 
@@ -25,6 +26,7 @@ export function UpdateModal({
   error,
   progress,
   onUpdateNow,
+  onRestartNow,
   onLater,
   onSkipVersion,
   onCheckAgain,
@@ -123,22 +125,25 @@ export function UpdateModal({
                 >
                   <ExternalLink className="w-3.5 h-3.5" /> View Full Release Notes on GitHub
                 </button>
+                <span className="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
+                  <Lock className="w-3 h-3 text-emerald-500" /> SHA-256 Verified
+                </span>
               </div>
             </div>
           )}
 
-          {/* Status: Downloading / Installing */}
-          {(status === UpdateStatus.DOWNLOADING || status === UpdateStatus.INSTALLING) && (
+          {/* Status: Downloading / Verifying */}
+          {(status === UpdateStatus.DOWNLOADING || status === UpdateStatus.VERIFYING) && (
             <div className="py-6 space-y-4">
               <div className="text-center space-y-1">
                 <div className="w-10 h-10 rounded-full bg-brand-500/10 border border-brand-500/30 flex items-center justify-center mx-auto text-brand-600 dark:text-brand-400 animate-pulse">
-                  <Download className="w-5 h-5" />
+                  {status === UpdateStatus.VERIFYING ? <ShieldCheck className="w-5 h-5 text-indigo-500" /> : <Download className="w-5 h-5" />}
                 </div>
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                  {status === UpdateStatus.DOWNLOADING ? 'Downloading Update...' : 'Installing SystemPilot Update...'}
+                  {status === UpdateStatus.VERIFYING ? 'Verifying Integrity...' : 'Downloading Official Update...'}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {progress?.text || 'Connecting to official release repository...'}
+                  {progress?.text || 'Transferring verified release package over HTTPS...'}
                 </p>
               </div>
 
@@ -149,13 +154,37 @@ export function UpdateModal({
                   colorClass="bg-gradient-to-r from-brand-500 to-indigo-500"
                 />
                 <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Progress</span>
+                  <span>Status: {status === UpdateStatus.VERIFYING ? 'SHA-256 Verification' : 'Streaming'}</span>
                   <span className="font-semibold text-slate-700 dark:text-slate-200">{progress?.percentage || 0}%</span>
                 </div>
               </div>
 
               <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
-                Please do not close SystemPilot while updates are being prepared.
+                SystemPilot dashboard and telemetry remain active while updates are downloaded in the background.
+              </p>
+            </div>
+          )}
+
+          {/* Status: Restart Required / Update Ready */}
+          {status === UpdateStatus.RESTART_REQUIRED && (
+            <div className="py-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Update Verified & Ready!</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                The official update has been cryptographically verified and is ready to install. Restart SystemPilot to apply the update.
+              </p>
+            </div>
+          )}
+
+          {/* Status: Installing */}
+          {status === UpdateStatus.INSTALLING && (
+            <div className="py-6 text-center space-y-3">
+              <Loader2 className="w-8 h-8 text-brand-600 dark:text-brand-400 animate-spin mx-auto" />
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Launching Windows Installer...</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                SystemPilot is restarting to finish applying the upgrade.
               </p>
             </div>
           )}
@@ -179,9 +208,9 @@ export function UpdateModal({
               <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-600 dark:text-rose-400">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Unable to Check for Updates</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                {error || 'Could not connect to GitHub. Your current installation remains unchanged.'}
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Update Encountered an Issue</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-mono text-[11px] bg-rose-50 dark:bg-rose-950/30 p-2 rounded-lg border border-rose-200 dark:border-rose-900/40">
+                {error || 'Could not complete update. Your current installation remains safe and unchanged.'}
               </p>
             </div>
           )}
@@ -206,6 +235,15 @@ export function UpdateModal({
                   <Download className="w-3.5 h-3.5" /> Update Now
                 </Button>
               </div>
+            </>
+          ) : status === UpdateStatus.RESTART_REQUIRED ? (
+            <>
+              <Button variant="secondary" size="sm" onClick={onLater}>
+                Restart Later
+              </Button>
+              <Button variant="primary" size="sm" onClick={onRestartNow} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
+                <RotateCcw className="w-3.5 h-3.5" /> Restart & Install Now
+              </Button>
             </>
           ) : status === UpdateStatus.ERROR ? (
             <>

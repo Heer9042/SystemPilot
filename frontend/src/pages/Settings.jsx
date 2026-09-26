@@ -25,6 +25,7 @@ import {
   Terminal,
   Monitor,
   Check,
+  RotateCcw,
 } from 'lucide-react';
 
 export function Settings({ theme, toggleTheme }) {
@@ -52,8 +53,10 @@ export function Settings({ theme, toggleTheme }) {
     lastChecked,
     autoCheckEnabled,
     error,
+    progress,
     checkForUpdates,
     downloadAndInstallUpdate,
+    restartAndApplyUpdate,
     dismissUpdate,
     openReleaseNotes,
     setAutoCheck,
@@ -188,6 +191,16 @@ export function Settings({ theme, toggleTheme }) {
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" /> New version available: v{latestRelease.version}
                     </span>
                   )}
+                  {(status === UpdateStatus.DOWNLOADING || status === UpdateStatus.VERIFYING) && (
+                    <span className="text-xs text-brand-600 dark:text-brand-400 flex items-center gap-1.5 font-medium">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> {progress?.text || 'Downloading and verifying update...'} ({progress?.percentage || 0}%)
+                    </span>
+                  )}
+                  {status === UpdateStatus.RESTART_REQUIRED && (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Update verified & ready to install
+                    </span>
+                  )}
                   {status === UpdateStatus.OFFLINE && (
                     <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5 font-medium">
                       <Info className="w-3.5 h-3.5" /> Offline mode: Update check unavailable
@@ -205,7 +218,15 @@ export function Settings({ theme, toggleTheme }) {
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                {status === UpdateStatus.AVAILABLE && latestRelease ? (
+                {status === UpdateStatus.RESTART_REQUIRED ? (
+                  <Button variant="primary" size="sm" onClick={restartAndApplyUpdate} className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5">
+                    <RotateCcw className="w-3.5 h-3.5" /> Restart & Install Now
+                  </Button>
+                ) : status === UpdateStatus.DOWNLOADING || status === UpdateStatus.VERIFYING ? (
+                  <Button variant="secondary" size="sm" onClick={openModal} className="flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> View Progress
+                  </Button>
+                ) : status === UpdateStatus.AVAILABLE && latestRelease ? (
                   <>
                     <Button variant="secondary" size="sm" onClick={() => openReleaseNotes(latestRelease.htmlUrl)}>
                       <ExternalLink className="w-3.5 h-3.5 mr-1" /> Notes
