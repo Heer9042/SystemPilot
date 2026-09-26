@@ -5,12 +5,19 @@ import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { api } from '../services/tauriApi';
 import { formatBytes } from '../utils/formatters';
-import { Sparkles, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Sparkles, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, Loader2, HardDrive, FileCheck2, Cpu } from 'lucide-react';
 
 export function CleanupCenter() {
   const [scanResult, setScanResult] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [cleaning, setCleaning] = useState(false);
+  const [cleanupProgress, setCleanupProgress] = useState({
+    percent: 0,
+    stage: '',
+    currentItem: '',
+    cleanedBytes: 0,
+    cleanedFiles: 0,
+  });
   const [selectedIds, setSelectedIds] = useState(['user_temp', 'win_temp', 'thumb_cache']);
   const [emptyRecycleBin, setEmptyRecycleBin] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
@@ -34,6 +41,26 @@ export function CleanupCenter() {
 
   useEffect(() => {
     runScan();
+
+    let unlisten = null;
+    const setupListener = async () => {
+      unlisten = await api.listenCleanupProgress((payload) => {
+        if (payload) {
+          setCleanupProgress((prev) => ({
+            percent: Math.min(100, Math.max(prev.percent, Math.round(payload.percent || 0))),
+            stage: payload.stage || prev.stage || 'Cleaning...',
+            currentItem: payload.current_item || prev.currentItem || '',
+            cleanedBytes: payload.cleaned_bytes !== undefined ? payload.cleaned_bytes : prev.cleanedBytes,
+            cleanedFiles: payload.cleaned_files !== undefined ? payload.cleaned_files : prev.cleanedFiles,
+          }));
+        }
+      });
+    };
+    setupListener();
+
+    return () => {
+      if (typeof unlisten === 'function') unlisten();
+    };
   }, []);
 
   const toggleCategory = (id) => {
@@ -45,11 +72,44 @@ export function CleanupCenter() {
   const handleExecute = async () => {
     setConfirmModal(false);
     setCleaning(true);
+    setCleanOutput(null);
+    setCleanupProgress({
+      percent: 5,
+      stage: 'Initializing Cleanup',
+      currentItem: 'Preparing junk files and cache remover...',
+      cleanedBytes: 0,
+      cleanedFiles: 0,
+    });
+
+    const interval = setInterval(() => {
+      setCleanupProgress((prev) => {
+        if (prev.percent < 90) {
+          const inc = Math.floor(Math.random() * 5) + 2;
+          return {
+            ...prev,
+            percent: Math.min(90, prev.percent + inc),
+          };
+        }
+        return prev;
+      });
+    }, 200);
+
     try {
       const res = await api.executeCleanup(selectedIds, emptyRecycleBin);
+      clearInterval(interval);
+      setCleanupProgress({
+        percent: 100,
+        stage: 'Cleanup Completed',
+        currentItem: res?.message || 'Selected categories cleared successfully',
+        cleanedBytes: res?.total_cleaned_bytes || 0,
+        cleanedFiles: res?.total_cleaned_files || 0,
+      });
+      // Grace period to let user observe 100% completion before settling
+      await new Promise((r) => setTimeout(r, 700));
       setCleanOutput(res);
       await runScan();
     } catch (e) {
+      clearInterval(interval);
       console.error(e);
     } finally {
       setCleaning(false);
@@ -75,24 +135,96 @@ export function CleanupCenter() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Button variant="secondary" size="md" icon={RefreshCw} disabled={scanning} onClick={runScan}>
+          <Button variant="secondary" size="md" icon={RefreshCw} disabled={scanning || cleaning} onClick={runScan}>
             {scanning ? 'Scanning...' : 'Scan Junk Files'}
           </Button>
           <Button
             variant="primary"
             size="md"
-            icon={Trash2}
+            icon={cleaning ? Loader2 : Trash2}
             disabled={cleaning || selectedIds.length === 0}
             onClick={() => setConfirmModal(true)}
-            className="shadow-lg shadow-brand-600/30"
+            className={`shadow-lg shadow-brand-600/30 relative overflow-hidden transition-all duration-300 ${
+              cleaning ? 'ring-2 ring-brand-400 font-semibold' : ''
+            }`}
           >
-            Clean Selected ({formatBytes(selectedBytes)})
+            {cleaning && (
+              <span
+                className="absolute inset-0 bg-emerald-500/25 transition-all duration-300 ease-out"
+                style={{ width: `${cleanupProgress.percent}%` }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              {cleaning ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Cleaning... {cleanupProgress.percent}%</span>
+                </>
+              ) : (
+                `Clean Selected (${formatBytes(selectedBytes)})`
+              )}
+            </span>
           </Button>
         </div>
       </Card>
 
+      {/* Live Cleanup Progress Bar Card */}
+      {cleaning && (
+        <Card className="p-4 bg-slate-900/90 border-brand-500/40 text-white shadow-xl shadow-brand-500/10 animate-scaleUp overflow-hidden relative">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-brand-500/20 text-brand-400 animate-pulse">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    Cleaning Junk Files & Caches
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 font-mono">
+                      {cleanupProgress.stage || 'In Progress'}
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5 font-mono truncate max-w-md">
+                    {cleanupProgress.currentItem || 'Removing temporary files safely...'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-2xl font-black font-mono tracking-tight bg-gradient-to-r from-brand-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
+                  {cleanupProgress.percent}%
+                </span>
+              </div>
+            </div>
+
+            {/* Progress Track & Bar */}
+            <div className="w-full bg-slate-800/90 rounded-full h-3.5 p-0.5 border border-slate-700/80 overflow-hidden relative shadow-inner">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-brand-600 via-indigo-500 to-emerald-400 transition-all duration-300 ease-out relative shadow-lg shadow-brand-500/50"
+                style={{ width: `${Math.max(4, cleanupProgress.percent)}%` }}
+              >
+                {/* Shimmer light effect */}
+                <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
+              </div>
+            </div>
+
+            {/* Live Stats Row */}
+            <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
+              <span className="flex items-center gap-1.5">
+                <FileCheck2 className="w-3.5 h-3.5 text-emerald-400" />
+                Files Removed: <strong className="text-slate-200">{cleanupProgress.cleanedFiles}</strong>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <HardDrive className="w-3.5 h-3.5 text-brand-400" />
+                Reclaimed: <strong className="text-slate-200">{formatBytes(cleanupProgress.cleanedBytes)}</strong>
+              </span>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Clean Output Result */}
-      {cleanOutput && (
+      {cleanOutput && !cleaning && (
         <Card className="p-4 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-500/40 animate-scaleUp">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />

@@ -137,6 +137,20 @@ export const api = {
     throw new Error('Tauri backend unavailable');
   },
 
+  async listenCleanupProgress(callback) {
+    try {
+      const { listen } = await import('@tauri-apps/api/event');
+      return await listen('cleanup-progress', (event) => {
+        if (callback && event && event.payload) {
+          callback(event.payload);
+        }
+      });
+    } catch (e) {
+      console.warn('Tauri event listen not available:', e);
+      return null;
+    }
+  },
+
   async getCleanupHistory() {
     const inv = await getInvoke();
     if (inv) return await inv('get_cleanup_history');
@@ -241,7 +255,7 @@ export const api = {
     if (inv) return await inv('get_app_version');
     return {
       name: 'SystemPilot',
-      version: '0.0.1',
+      version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.2',
       target_arch: 'x64',
       target_os: 'windows',
       git_repository: 'Heer9042/SystemPilot',

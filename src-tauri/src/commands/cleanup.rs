@@ -154,8 +154,20 @@ pub fn scan_cleanable_items() -> Result<CleanupScanResult, String> {
     })
 }
 
+use tauri::Emitter;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CleanupProgressPayload {
+    pub percent: f32,
+    pub stage: String,
+    pub current_item: String,
+    pub cleaned_bytes: u64,
+    pub cleaned_files: usize,
+}
+
 #[tauri::command]
 pub fn execute_cleanup(
+    app: tauri::AppHandle,
     category_ids: Vec<String>,
     empty_recycle_bin: bool,
     db: tauri::State<'_, Database>,
@@ -163,7 +175,40 @@ pub fn execute_cleanup(
     let mut cleaned_bytes = 0u64;
     let mut cleaned_files = 0usize;
 
-    for id in &category_ids {
+    let total_steps = category_ids.len() + if empty_recycle_bin { 1 } else { 0 };
+    let step_weight = if total_steps > 0 { 90.0 / total_steps as f32 } else { 90.0 };
+
+    let _ = app.emit(
+        "cleanup-progress",
+        CleanupProgressPayload {
+            percent: 5.0,
+            stage: "Preparing".into(),
+            current_item: "Initializing cleanup routine...".into(),
+            cleaned_bytes: 0,
+            cleaned_files: 0,
+        },
+    );
+
+    for (idx, id) in category_ids.iter().enumerate() {
+        let base_pct = 5.0 + (idx as f32 * step_weight);
+        let cat_label = match id.as_str() {
+            "user_temp" => "User Temporary Files",
+            "win_temp" => "System Windows Temp",
+            "thumb_cache" => "Windows Thumbnail Cache",
+            _ => id.as_str(),
+        };
+
+        let _ = app.emit(
+            "cleanup-progress",
+            CleanupProgressPayload {
+                percent: base_pct + (step_weight * 0.2),
+                stage: format!("Cleaning {}", cat_label),
+                current_item: format!("Scanning and purging {}", cat_label),
+                cleaned_bytes,
+                cleaned_files,
+            },
+        );
+
         if id == "user_temp" {
             if let Ok(temp_env) = std::env::var("TEMP") {
                 let (c, b) = clean_dir(&PathBuf::from(temp_env));
@@ -197,10 +242,31 @@ pub fn execute_cleanup(
                 }
             }
         }
+
+        let _ = app.emit(
+            "cleanup-progress",
+            CleanupProgressPayload {
+                percent: base_pct + step_weight,
+                stage: format!("Processed {}", cat_label),
+                current_item: format!("Freed {:.2} MB so far", cleaned_bytes as f64 / (1024.0 * 1024.0)),
+                cleaned_bytes,
+                cleaned_files,
+            },
+        );
     }
 
-
     if empty_recycle_bin {
+        let _ = app.emit(
+            "cleanup-progress",
+            CleanupProgressPayload {
+                percent: 92.0,
+                stage: "Recycle Bin".into(),
+                current_item: "Emptying Windows Recycle Bin...".into(),
+                cleaned_bytes,
+                cleaned_files,
+            },
+        );
+
         #[cfg(target_os = "windows")]
         {
             use windows_sys::Win32::UI::Shell::{
@@ -220,6 +286,21 @@ pub fn execute_cleanup(
         cleaned_bytes,
         &format!("Categories: {:?}", category_ids),
         true,
+    );
+
+    let _ = app.emit(
+        "cleanup-progress",
+        CleanupProgressPayload {
+            percent: 100.0,
+            stage: "Complete".into(),
+            current_item: format!(
+                "Cleaned {} files ({:.2} MB freed)",
+                cleaned_files,
+                cleaned_bytes as f64 / (1024.0 * 1024.0)
+            ),
+            cleaned_bytes,
+            cleaned_files,
+        },
     );
 
     Ok(CleanupExecutionResult {

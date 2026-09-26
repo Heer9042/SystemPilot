@@ -36,6 +36,8 @@ lerna-debug.log*
 *.tmp
 *.temp
 *.cache
+*.timestamp*
+*.timestamp*.mjs
 
 # Coverage & Testing
 coverage/
