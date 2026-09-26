@@ -9,11 +9,38 @@ Copy-Item "src-tauri/target/release/systempilot.exe" "release/SystemPilot.exe" -
 Copy-Item "src-tauri/target/release/bundle/nsis/*.exe" "release/SystemPilot-Setup.exe" -Force
 Copy-Item "src-tauri/target/release/bundle/msi/*.msi" "release/SystemPilot.msi" -Force
 
+$zipDest = "release/SystemPilot-Portable.zip"
+$tmpZip = "release/SystemPilot-Portable.tmp.zip"
+
+if (Test-Path $tmpZip) {
+    Remove-Item -Path $tmpZip -Force -ErrorAction SilentlyContinue
+}
+
+$filesToZip = @("release/SystemPilot.exe")
 if (Test-Path "src-tauri/target/release/WebView2Loader.dll") {
     Copy-Item "src-tauri/target/release/WebView2Loader.dll" "release/WebView2Loader.dll" -Force
-    Compress-Archive -Path "release/SystemPilot.exe","release/WebView2Loader.dll" -DestinationPath "release/SystemPilot-Portable.zip" -Force
-} else {
-    Compress-Archive -Path "release/SystemPilot.exe" -DestinationPath "release/SystemPilot-Portable.zip" -Force
+    $filesToZip += "release/WebView2Loader.dll"
+}
+
+try {
+    Compress-Archive -Path $filesToZip -DestinationPath $tmpZip -Force
+    
+    # Safely replace destination zip with retry
+    $retries = 3
+    while ($retries -gt 0) {
+        try {
+            if (Test-Path $zipDest) {
+                Remove-Item -Path $zipDest -Force -ErrorAction Stop
+            }
+            Move-Item -Path $tmpZip -Destination $zipDest -Force -ErrorAction Stop
+            break
+        } catch {
+            $retries--
+            Start-Sleep -Milliseconds 400
+        }
+    }
+} catch {
+    Write-Warning "Could not build Portable ZIP immediately due to file lock: $_"
 }
 
 Write-Host "Calculating SHA-256 Checksums..."
