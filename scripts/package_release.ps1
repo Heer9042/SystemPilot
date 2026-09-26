@@ -93,3 +93,6 @@ $latestMetadata = [PSCustomObject]@{
 
 $latestMetadata | ConvertTo-Json -Depth 4 | Out-File -FilePath "release/latest.json" -Encoding ascii
 Write-Host "Release packaging complete. Checksums saved to release/SHA256SUMS.txt and release/latest.json"
+
+# Run automated validation
+& "$PSScriptRoot/verify_binary.ps1"
