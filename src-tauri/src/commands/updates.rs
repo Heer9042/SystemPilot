@@ -93,7 +93,8 @@ pub fn open_release_notes(url: Option<String>) -> Result<(), String> {
         cmd.arg(&target_url);
         cmd.creation_flags(CREATE_NO_WINDOW);
 
-        cmd.spawn().map_err(|e| format!("Failed to open browser: {}", e))?;
+        cmd.spawn()
+            .map_err(|e| format!("Failed to open browser: {}", e))?;
         Ok(())
     }
 
@@ -133,7 +134,10 @@ fn compute_file_sha256(path: &Path) -> Result<String, String> {
         }
 
         // Fallback to PowerShell Get-FileHash if CertUtil format differed
-        let ps_cmd = format!("(Get-FileHash -Path '{}' -Algorithm SHA256).Hash", path.display());
+        let ps_cmd = format!(
+            "(Get-FileHash -Path '{}' -Algorithm SHA256).Hash",
+            path.display()
+        );
         let ps_output = std::process::Command::new("powershell")
             .args(["-NoProfile", "-NonInteractive", "-Command", &ps_cmd])
             .creation_flags(CREATE_NO_WINDOW)
@@ -141,7 +145,9 @@ fn compute_file_sha256(path: &Path) -> Result<String, String> {
             .map_err(|e| format!("Failed to run PowerShell Get-FileHash: {}", e))?;
 
         if ps_output.status.success() {
-            let hash = String::from_utf8_lossy(&ps_output.stdout).trim().to_lowercase();
+            let hash = String::from_utf8_lossy(&ps_output.stdout)
+                .trim()
+                .to_lowercase();
             if hash.len() == 64 {
                 return Ok(hash);
             }
@@ -167,13 +173,19 @@ pub async fn download_and_verify_update(
     if !download_url.starts_with("https://github.com/Heer9042/SystemPilot/releases/download/")
         && !download_url.starts_with("https://objects.githubusercontent.com/")
     {
-        return Err("Security notice: Update address is not an official SystemPilot release location.".to_string());
+        return Err(
+            "Security notice: Update address is not an official SystemPilot release location."
+                .to_string(),
+        );
     }
 
     // 2. Prepare Updates Directory
     let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_else(|_| ".".to_string());
-    let updates_dir = PathBuf::from(local_app_data).join("SystemPilot").join("updates");
-    fs::create_dir_all(&updates_dir).map_err(|e| format!("Failed to create updates directory: {}", e))?;
+    let updates_dir = PathBuf::from(local_app_data)
+        .join("SystemPilot")
+        .join("updates");
+    fs::create_dir_all(&updates_dir)
+        .map_err(|e| format!("Failed to create updates directory: {}", e))?;
 
     // Determine target filename
     let file_name = if download_url.to_lowercase().ends_with(".msi") {
@@ -229,16 +241,25 @@ pub async fn download_and_verify_update(
         );
 
         let status = std::process::Command::new("powershell")
-            .args(["-NoProfile", "-NonInteractive", "-Command", &ps_download_script])
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                &ps_download_script,
+            ])
             .creation_flags(CREATE_NO_WINDOW)
             .status()
             .map_err(|e| format!("Failed to download update: {}", e))?;
 
         if !status.success() || !target_path.exists() {
-            return Err("The update could not be downloaded. Please check your internet connection.".to_string());
+            return Err(
+                "The update could not be downloaded. Please check your internet connection."
+                    .to_string(),
+            );
         }
 
-        let metadata = fs::metadata(&target_path).map_err(|e| format!("Failed to read update file: {}", e))?;
+        let metadata =
+            fs::metadata(&target_path).map_err(|e| format!("Failed to read update file: {}", e))?;
         let file_size = metadata.len();
 
         let _ = app.emit(
@@ -300,9 +321,14 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
 
     // Validate path is inside SystemPilot updates folder
     let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_else(|_| ".".to_string());
-    let allowed_dir = PathBuf::from(local_app_data).join("SystemPilot").join("updates");
+    let allowed_dir = PathBuf::from(local_app_data)
+        .join("SystemPilot")
+        .join("updates");
     if !path.starts_with(&allowed_dir) {
-        return Err("Security notice: Cannot execute update packages outside designated directory.".to_string());
+        return Err(
+            "Security notice: Cannot execute update packages outside designated directory."
+                .to_string(),
+        );
     }
 
     #[cfg(target_os = "windows")]
@@ -310,7 +336,11 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+        let ext = path
+            .extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_lowercase();
 
         if ext == "msi" {
             std::process::Command::new("msiexec.exe")

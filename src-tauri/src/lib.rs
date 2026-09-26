@@ -25,9 +25,6 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--minimized"]),
         ))
-
-
-
         .plugin(tauri_plugin_fs::init())
         .manage(database)
         .manage(commands::system::SystemState::default())
@@ -93,21 +90,30 @@ pub fn run() {
                     let sys_state = app_handle.try_state::<commands::system::SystemState>();
 
                     if let (Some(db), Some(sys)) = (db_state, sys_state) {
-                        let auto_enabled = db.get_setting("auto_clean_enabled").unwrap_or_default() == "true";
+                        let auto_enabled =
+                            db.get_setting("auto_clean_enabled").unwrap_or_default() == "true";
                         if auto_enabled {
-                            let threshold: f32 = db.get_setting("auto_clean_threshold")
+                            let threshold: f32 = db
+                                .get_setting("auto_clean_threshold")
                                 .and_then(|v| v.parse().ok())
                                 .unwrap_or(85.0);
-                            let cooldown_min: u64 = db.get_setting("auto_clean_cooldown_min")
+                            let cooldown_min: u64 = db
+                                .get_setting("auto_clean_cooldown_min")
                                 .and_then(|v| v.parse().ok())
                                 .unwrap_or(5);
 
-                            if last_clean.elapsed() >= std::time::Duration::from_secs(cooldown_min * 60) {
+                            if last_clean.elapsed()
+                                >= std::time::Duration::from_secs(cooldown_min * 60)
+                            {
                                 let mut s = sys.sys.lock().unwrap();
                                 s.refresh_memory();
                                 let total = s.total_memory();
                                 let used = s.used_memory();
-                                let pct = if total > 0 { (used as f32 / total as f32) * 100.0 } else { 0.0 };
+                                let pct = if total > 0 {
+                                    (used as f32 / total as f32) * 100.0
+                                } else {
+                                    0.0
+                                };
 
                                 if pct >= threshold {
                                     drop(s);

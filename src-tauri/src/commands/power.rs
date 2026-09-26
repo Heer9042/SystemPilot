@@ -11,8 +11,8 @@ pub struct PowerPlanInfo {
 pub fn get_power_plans() -> Result<Vec<PowerPlanInfo>, String> {
     #[cfg(target_os = "windows")]
     {
-        use std::process::Command;
         use std::os::windows::process::CommandExt;
+        use std::process::Command;
         let output = Command::new("powercfg")
             .creation_flags(0x08000000)
             .args(&["/list"])
@@ -82,7 +82,9 @@ pub fn is_valid_power_guid(guid: &str) -> bool {
     let clean = guid.trim();
     !clean.is_empty()
         && clean.len() <= 64
-        && clean.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '{' || c == '}')
+        && clean
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '{' || c == '}')
 }
 
 #[tauri::command]
@@ -94,8 +96,8 @@ pub fn set_power_plan(guid: String) -> Result<bool, String> {
 
     #[cfg(target_os = "windows")]
     {
-        use std::process::Command;
         use std::os::windows::process::CommandExt;
+        use std::process::Command;
         let status = Command::new("powercfg")
             .creation_flags(0x08000000)
             .args(&["/setactive", clean_guid])
@@ -118,7 +120,9 @@ mod tests {
     #[test]
     fn test_power_guid_validation() {
         assert!(is_valid_power_guid("381b4222-f694-41f0-9685-ff5bb260df2e"));
-        assert!(is_valid_power_guid("{8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c}"));
+        assert!(is_valid_power_guid(
+            "{8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c}"
+        ));
         assert!(is_valid_power_guid("a1841308-3541-4fab-bc81-f71556f20b4a"));
         // Rejections
         assert!(!is_valid_power_guid(""));

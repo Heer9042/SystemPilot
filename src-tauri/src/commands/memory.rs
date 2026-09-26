@@ -29,7 +29,9 @@ pub struct CleanMemoryResult {
 }
 
 #[tauri::command]
-pub fn get_detailed_memory_stats(state: tauri::State<'_, super::system::SystemState>) -> Result<DetailedMemoryStats, String> {
+pub fn get_detailed_memory_stats(
+    state: tauri::State<'_, super::system::SystemState>,
+) -> Result<DetailedMemoryStats, String> {
     let (total, used, free, available, pct) = {
         let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
         sys.refresh_memory();
@@ -37,13 +39,19 @@ pub fn get_detailed_memory_stats(state: tauri::State<'_, super::system::SystemSt
         let used = sys.used_memory();
         let free = sys.free_memory();
         let available = sys.available_memory();
-        let pct = if total > 0 { (used as f32 / total as f32) * 100.0 } else { 0.0 };
+        let pct = if total > 0 {
+            (used as f32 / total as f32) * 100.0
+        } else {
+            0.0
+        };
         (total, used, free, available, pct)
     };
 
     #[cfg(target_os = "windows")]
     {
-        use windows_sys::Win32::System::ProcessStatus::{GetPerformanceInfo, PERFORMANCE_INFORMATION};
+        use windows_sys::Win32::System::ProcessStatus::{
+            GetPerformanceInfo, PERFORMANCE_INFORMATION,
+        };
         use windows_sys::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
 
         unsafe {
@@ -53,15 +61,42 @@ pub fn get_detailed_memory_stats(state: tauri::State<'_, super::system::SystemSt
 
             let mut perf_info: PERFORMANCE_INFORMATION = std::mem::zeroed();
             perf_info.cb = std::mem::size_of::<PERFORMANCE_INFORMATION>() as u32;
-            let perf_ok = GetPerformanceInfo(&mut perf_info, std::mem::size_of::<PERFORMANCE_INFORMATION>() as u32) != 0;
+            let perf_ok = GetPerformanceInfo(
+                &mut perf_info,
+                std::mem::size_of::<PERFORMANCE_INFORMATION>() as u32,
+            ) != 0;
 
-            let page_size = if perf_ok && perf_info.PageSize > 0 { perf_info.PageSize as u64 } else { 4096 };
+            let page_size = if perf_ok && perf_info.PageSize > 0 {
+                perf_info.PageSize as u64
+            } else {
+                4096
+            };
 
-            let committed_ram = if perf_ok { perf_info.CommitTotal as u64 * page_size } else { mem_status.ullTotalPageFile - mem_status.ullAvailPageFile };
-            let commit_limit = if perf_ok { perf_info.CommitLimit as u64 * page_size } else { mem_status.ullTotalPageFile };
-            let paged_pool = if perf_ok { perf_info.KernelPaged as u64 * page_size } else { 0 };
-            let non_paged_pool = if perf_ok { perf_info.KernelNonpaged as u64 * page_size } else { 0 };
-            let cached_ram = if perf_ok { (perf_info.SystemCache as u64) * page_size } else { 0 };
+            let committed_ram = if perf_ok {
+                perf_info.CommitTotal as u64 * page_size
+            } else {
+                mem_status.ullTotalPageFile - mem_status.ullAvailPageFile
+            };
+            let commit_limit = if perf_ok {
+                perf_info.CommitLimit as u64 * page_size
+            } else {
+                mem_status.ullTotalPageFile
+            };
+            let paged_pool = if perf_ok {
+                perf_info.KernelPaged as u64 * page_size
+            } else {
+                0
+            };
+            let non_paged_pool = if perf_ok {
+                perf_info.KernelNonpaged as u64 * page_size
+            } else {
+                0
+            };
+            let cached_ram = if perf_ok {
+                (perf_info.SystemCache as u64) * page_size
+            } else {
+                0
+            };
 
             return Ok(DetailedMemoryStats {
                 total_ram: total,
@@ -75,7 +110,9 @@ pub fn get_detailed_memory_stats(state: tauri::State<'_, super::system::SystemSt
                 paged_pool,
                 non_paged_pool,
                 page_file_total: mem_status.ullTotalPageFile,
-                page_file_used: mem_status.ullTotalPageFile.saturating_sub(mem_status.ullAvailPageFile),
+                page_file_used: mem_status
+                    .ullTotalPageFile
+                    .saturating_sub(mem_status.ullAvailPageFile),
                 usage_percentage: pct,
             });
         }

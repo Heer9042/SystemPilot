@@ -15,15 +15,23 @@ pub struct CpuDetailedInfo {
 }
 
 #[tauri::command]
-pub fn get_cpu_detailed_info(state: tauri::State<'_, super::system::SystemState>) -> Result<CpuDetailedInfo, String> {
+pub fn get_cpu_detailed_info(
+    state: tauri::State<'_, super::system::SystemState>,
+) -> Result<CpuDetailedInfo, String> {
     let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
     sys.refresh_cpu_all();
 
     let cpus = sys.cpus();
     let logical_cores = cpus.len();
     let physical_cores = sys.physical_core_count().unwrap_or(logical_cores);
-    let brand = cpus.first().map(|c| c.brand().to_string()).unwrap_or_else(|| "Unknown CPU".into());
-    let vendor_id = cpus.first().map(|c| c.vendor_id().to_string()).unwrap_or_default();
+    let brand = cpus
+        .first()
+        .map(|c| c.brand().to_string())
+        .unwrap_or_else(|| "Unknown CPU".into());
+    let vendor_id = cpus
+        .first()
+        .map(|c| c.vendor_id().to_string())
+        .unwrap_or_default();
     let freq = cpus.first().map(|c| c.frequency()).unwrap_or(0);
     let global_usage = sys.global_cpu_usage();
     let core_usages: Vec<f32> = cpus.iter().map(|c| c.cpu_usage()).collect();

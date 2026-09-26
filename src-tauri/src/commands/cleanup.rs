@@ -176,7 +176,11 @@ pub fn execute_cleanup(
     let mut cleaned_files = 0usize;
 
     let total_steps = category_ids.len() + if empty_recycle_bin { 1 } else { 0 };
-    let step_weight = if total_steps > 0 { 90.0 / total_steps as f32 } else { 90.0 };
+    let step_weight = if total_steps > 0 {
+        90.0 / total_steps as f32
+    } else {
+        90.0
+    };
 
     let _ = app.emit(
         "cleanup-progress",
@@ -221,7 +225,8 @@ pub fn execute_cleanup(
             cleaned_bytes += b;
         } else if id == "thumb_cache" {
             if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
-                let thumb_path = PathBuf::from(&local_app_data).join("Microsoft\\Windows\\Explorer");
+                let thumb_path =
+                    PathBuf::from(&local_app_data).join("Microsoft\\Windows\\Explorer");
                 if thumb_path.exists() {
                     if let Ok(entries) = fs::read_dir(&thumb_path) {
                         for e in entries.flatten() {
@@ -248,7 +253,10 @@ pub fn execute_cleanup(
             CleanupProgressPayload {
                 percent: base_pct + step_weight,
                 stage: format!("Processed {}", cat_label),
-                current_item: format!("Freed {:.2} MB so far", cleaned_bytes as f64 / (1024.0 * 1024.0)),
+                current_item: format!(
+                    "Freed {:.2} MB so far",
+                    cleaned_bytes as f64 / (1024.0 * 1024.0)
+                ),
                 cleaned_bytes,
                 cleaned_files,
             },
@@ -316,6 +324,8 @@ pub fn execute_cleanup(
 }
 
 #[tauri::command]
-pub fn get_cleanup_history(db: tauri::State<'_, Database>) -> Result<Vec<crate::db::CleanupLog>, String> {
+pub fn get_cleanup_history(
+    db: tauri::State<'_, Database>,
+) -> Result<Vec<crate::db::CleanupLog>, String> {
     db.get_cleanup_history(50).map_err(|e| e.to_string())
 }

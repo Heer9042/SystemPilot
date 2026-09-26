@@ -109,8 +109,14 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
     let cpus = sys.cpus();
     let logical_cores = cpus.len();
     let physical_cores = sys.physical_core_count().unwrap_or(logical_cores);
-    let cpu_brand = cpus.first().map(|c| c.brand().to_string()).unwrap_or_else(|| "x86_64 Processor".into());
-    let cpu_vendor_id = cpus.first().map(|c| c.vendor_id().to_string()).unwrap_or_default();
+    let cpu_brand = cpus
+        .first()
+        .map(|c| c.brand().to_string())
+        .unwrap_or_else(|| "x86_64 Processor".into());
+    let cpu_vendor_id = cpus
+        .first()
+        .map(|c| c.vendor_id().to_string())
+        .unwrap_or_default();
     let cpu_base_freq = cpus.first().map(|c| c.frequency()).unwrap_or(0);
     let total_memory_bytes = sys.total_memory();
     let uptime_seconds = System::uptime();
@@ -173,43 +179,65 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
 
     #[cfg(target_os = "windows")]
     {
-        use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
+        use crate::windows::registry::{
+            enum_subkeys, get_reg_dword, get_reg_qword, get_reg_string,
+        };
         use windows_sys::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
-        use crate::windows::registry::{enum_subkeys, get_reg_dword, get_reg_qword, get_reg_string};
+        use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 
         let bios_key = "HARDWARE\\DESCRIPTION\\System\\BIOS";
 
         if let Some(m) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BaseBoardManufacturer") {
-            if !m.is_empty() { summary.motherboard_manufacturer = m; }
+            if !m.is_empty() {
+                summary.motherboard_manufacturer = m;
+            }
         }
         if let Some(p) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BaseBoardProduct") {
-            if !p.is_empty() { summary.motherboard_product = p; }
+            if !p.is_empty() {
+                summary.motherboard_product = p;
+            }
         }
         if let Some(v) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BaseBoardVersion") {
-            if !v.is_empty() { summary.motherboard_version = v; }
+            if !v.is_empty() {
+                summary.motherboard_version = v;
+            }
         }
 
         if let Some(sm) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "SystemManufacturer") {
-            if !sm.is_empty() { summary.system_manufacturer = sm; }
+            if !sm.is_empty() {
+                summary.system_manufacturer = sm;
+            }
         }
         if let Some(sp) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "SystemProductName") {
-            if !sp.is_empty() { summary.system_product_name = sp; }
+            if !sp.is_empty() {
+                summary.system_product_name = sp;
+            }
         }
         if let Some(sf) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "SystemFamily") {
-            if !sf.is_empty() { summary.system_family = sf; }
+            if !sf.is_empty() {
+                summary.system_family = sf;
+            }
         }
         if let Some(sku) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "SystemSKU") {
-            if !sku.is_empty() { summary.system_sku = sku; }
+            if !sku.is_empty() {
+                summary.system_sku = sku;
+            }
         }
 
         if let Some(v) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BIOSVendor") {
-            if !v.is_empty() { summary.bios_vendor = v; }
+            if !v.is_empty() {
+                summary.bios_vendor = v;
+            }
         }
         if let Some(ver) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BIOSVersion") {
-            if !ver.is_empty() { summary.bios_version = ver; }
+            if !ver.is_empty() {
+                summary.bios_version = ver;
+            }
         }
         if let Some(d) = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BIOSReleaseDate") {
-            if !d.is_empty() { summary.bios_release_date = d; }
+            if !d.is_empty() {
+                summary.bios_release_date = d;
+            }
         }
 
         // Windows Version Registry
@@ -225,7 +253,11 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
             .unwrap_or_default();
         let ubr = get_reg_dword(HKEY_LOCAL_MACHINE, win_key, "UBR").unwrap_or(0);
         if !build.is_empty() {
-            summary.os_build = if ubr > 0 { format!("{}.{}", build, ubr) } else { build };
+            summary.os_build = if ubr > 0 {
+                format!("{}.{}", build, ubr)
+            } else {
+                build
+            };
         }
 
         // Secure Boot state
@@ -253,7 +285,8 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
         }
 
         // GPU Detection
-        let video_class = "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
+        let video_class =
+            "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
         let subkeys = enum_subkeys(HKEY_LOCAL_MACHINE, video_class);
         for sub in subkeys {
             if sub.chars().all(|c| c.is_ascii_digit()) {
@@ -262,15 +295,28 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
                     .or_else(|| get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "AdapterString"))
                     .unwrap_or_default();
 
-                if name.is_empty() || name.to_lowercase().contains("remote") || name.to_lowercase().contains("mirror") {
+                if name.is_empty()
+                    || name.to_lowercase().contains("remote")
+                    || name.to_lowercase().contains("mirror")
+                {
                     continue;
                 }
 
                 let driver = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "DriverVersion")
                     .unwrap_or_else(|| "WDDM Standard".into());
-                let ram = get_reg_qword(HKEY_LOCAL_MACHINE, &adapter_key, "HardwareInformation.qwMemorySize")
-                    .or_else(|| get_reg_qword(HKEY_LOCAL_MACHINE, &adapter_key, "HardwareInformation.MemorySize"))
-                    .unwrap_or(0);
+                let ram = get_reg_qword(
+                    HKEY_LOCAL_MACHINE,
+                    &adapter_key,
+                    "HardwareInformation.qwMemorySize",
+                )
+                .or_else(|| {
+                    get_reg_qword(
+                        HKEY_LOCAL_MACHINE,
+                        &adapter_key,
+                        "HardwareInformation.MemorySize",
+                    )
+                })
+                .unwrap_or(0);
 
                 let lower_name = name.to_lowercase();
                 let vendor = if lower_name.contains("nvidia") {
@@ -295,7 +341,8 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
         }
 
         // Audio devices
-        let sound_class = "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e96c-e325-11ce-bfc1-08002be10318}";
+        let sound_class =
+            "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e96c-e325-11ce-bfc1-08002be10318}";
         let sound_subkeys = enum_subkeys(HKEY_LOCAL_MACHINE, sound_class);
         for sub in sound_subkeys {
             if sub.chars().all(|c| c.is_ascii_digit()) {
@@ -328,7 +375,11 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
 
     // Network adapters
     for (name, iface) in networks.iter() {
-        let ips: Vec<String> = iface.ip_networks().iter().map(|ip| ip.addr.to_string()).collect();
+        let ips: Vec<String> = iface
+            .ip_networks()
+            .iter()
+            .map(|ip| ip.addr.to_string())
+            .collect();
         summary.network_adapters.push(HardwareNetworkItem {
             name: name.clone(),
             mac_address: iface.mac_address().to_string(),
@@ -349,8 +400,8 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
 
     #[cfg(target_os = "windows")]
     {
-        use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
         use crate::windows::registry::get_reg_dword;
+        use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 
         // 1. Windows Firewall Check via Registry
         let fw_key = "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandardProfile";

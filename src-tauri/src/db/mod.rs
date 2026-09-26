@@ -116,7 +116,12 @@ impl Database {
         Ok(state.settings.clone())
     }
 
-    pub fn add_cleanup_log(&self, bytes: u64, categories: &str, success: bool) -> Result<(), String> {
+    pub fn add_cleanup_log(
+        &self,
+        bytes: u64,
+        categories: &str,
+        success: bool,
+    ) -> Result<(), String> {
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         state.next_id += 1;
         let id = state.next_id;
@@ -144,7 +149,13 @@ impl Database {
         Ok(logs)
     }
 
-    pub fn add_benchmark_log(&self, test_type: &str, score: f64, duration_ms: u64, details: &str) -> Result<(), String> {
+    pub fn add_benchmark_log(
+        &self,
+        test_type: &str,
+        score: f64,
+        duration_ms: u64,
+        details: &str,
+    ) -> Result<(), String> {
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         state.next_id += 1;
         let id = state.next_id;
@@ -167,10 +178,14 @@ impl Database {
         Ok(())
     }
 
-
     pub fn get_benchmark_history(&self, limit: usize) -> Result<Vec<BenchmarkLog>, String> {
         let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
-        let logs: Vec<BenchmarkLog> = state.benchmark_history.iter().take(limit).cloned().collect();
+        let logs: Vec<BenchmarkLog> = state
+            .benchmark_history
+            .iter()
+            .take(limit)
+            .cloned()
+            .collect();
         Ok(logs)
     }
 }
@@ -182,11 +197,15 @@ mod tests {
     #[test]
     fn test_db_init_and_settings() {
         let temp_dir = std::env::temp_dir();
-        let db_path = temp_dir.join(format!("test_systempilot_db_{}.json", chrono::Local::now().timestamp_nanos_opt().unwrap_or(0)));
+        let db_path = temp_dir.join(format!(
+            "test_systempilot_db_{}.json",
+            chrono::Local::now().timestamp_nanos_opt().unwrap_or(0)
+        ));
         let db = Database::init(db_path.clone()).expect("Failed to init test db");
 
         assert_eq!(db.get_setting("theme"), Some("dark".to_string()));
-        db.set_setting("theme", "light").expect("Failed to set setting");
+        db.set_setting("theme", "light")
+            .expect("Failed to set setting");
         assert_eq!(db.get_setting("theme"), Some("light".to_string()));
 
         // Re-read from disk
@@ -199,7 +218,10 @@ mod tests {
     #[test]
     fn test_cleanup_log_history_limit() {
         let temp_dir = std::env::temp_dir();
-        let db_path = temp_dir.join(format!("test_cleanup_history_{}.json", chrono::Local::now().timestamp_nanos_opt().unwrap_or(0)));
+        let db_path = temp_dir.join(format!(
+            "test_cleanup_history_{}.json",
+            chrono::Local::now().timestamp_nanos_opt().unwrap_or(0)
+        ));
         let db = Database::init(db_path.clone()).expect("Failed to init test db");
 
         for i in 0..10 {

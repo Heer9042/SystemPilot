@@ -24,7 +24,9 @@ pub struct NetworkInterfaceInfo {
 }
 
 #[tauri::command]
-pub fn get_disk_details(state: tauri::State<'_, super::system::SystemState>) -> Result<Vec<DiskPartitionInfo>, String> {
+pub fn get_disk_details(
+    state: tauri::State<'_, super::system::SystemState>,
+) -> Result<Vec<DiskPartitionInfo>, String> {
     let mut disks = state.disks.lock().map_err(|e| e.to_string())?;
     disks.refresh();
 
@@ -33,7 +35,11 @@ pub fn get_disk_details(state: tauri::State<'_, super::system::SystemState>) -> 
         let total = d.total_space();
         let avail = d.available_space();
         let used = total.saturating_sub(avail);
-        let pct = if total > 0 { (used as f32 / total as f32) * 100.0 } else { 0.0 };
+        let pct = if total > 0 {
+            (used as f32 / total as f32) * 100.0
+        } else {
+            0.0
+        };
 
         let kind = match d.kind() {
             sysinfo::DiskKind::SSD => "SSD",
@@ -58,13 +64,19 @@ pub fn get_disk_details(state: tauri::State<'_, super::system::SystemState>) -> 
 }
 
 #[tauri::command]
-pub fn get_network_details(state: tauri::State<'_, super::system::SystemState>) -> Result<Vec<NetworkInterfaceInfo>, String> {
+pub fn get_network_details(
+    state: tauri::State<'_, super::system::SystemState>,
+) -> Result<Vec<NetworkInterfaceInfo>, String> {
     let mut net = state.networks.lock().map_err(|e| e.to_string())?;
     net.refresh();
 
     let mut result = Vec::new();
     for (name, iface) in net.iter() {
-        let ips: Vec<String> = iface.ip_networks().iter().map(|ip| ip.addr.to_string()).collect();
+        let ips: Vec<String> = iface
+            .ip_networks()
+            .iter()
+            .map(|ip| ip.addr.to_string())
+            .collect();
         result.push(NetworkInterfaceInfo {
             name: name.clone(),
             ip_addresses: ips,

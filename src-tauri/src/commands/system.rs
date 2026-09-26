@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use sysinfo::{CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System};
 use std::sync::Mutex;
 use std::time::Instant;
+use sysinfo::{CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System};
 
 pub struct SystemState {
     pub sys: Mutex<System>,
@@ -90,7 +90,11 @@ pub fn get_system_stats(state: tauri::State<'_, SystemState>) -> Result<SystemSt
         })
         .collect();
     let cpu_freq_mhz = sys.cpus().first().map(|c| c.frequency()).unwrap_or(0);
-    let cpu_name = sys.cpus().first().map(|c| c.brand().to_string()).unwrap_or_else(|| "Unknown CPU".into());
+    let cpu_name = sys
+        .cpus()
+        .first()
+        .map(|c| c.brand().to_string())
+        .unwrap_or_else(|| "Unknown CPU".into());
 
     let ram_total = sys.total_memory();
     let ram_used = sys.used_memory();
@@ -127,8 +131,16 @@ pub fn get_system_stats(state: tauri::State<'_, SystemState>) -> Result<SystemSt
     let now = Instant::now();
     let elapsed = now.duration_since(*last_check).as_secs_f64().max(0.1);
 
-    let rx_diff = if total_rx >= *last_rx && *last_rx > 0 { total_rx - *last_rx } else { 0 };
-    let tx_diff = if total_tx >= *last_tx && *last_tx > 0 { total_tx - *last_tx } else { 0 };
+    let rx_diff = if total_rx >= *last_rx && *last_rx > 0 {
+        total_rx - *last_rx
+    } else {
+        0
+    };
+    let tx_diff = if total_tx >= *last_tx && *last_tx > 0 {
+        total_tx - *last_tx
+    } else {
+        0
+    };
 
     let net_download_bytes_sec = (rx_diff as f64 / elapsed) as u64;
     let net_upload_bytes_sec = (tx_diff as f64 / elapsed) as u64;

@@ -48,7 +48,9 @@ struct ProcessRawSnapshot {
 }
 
 #[tauri::command]
-pub fn get_processes(state: tauri::State<'_, super::system::SystemState>) -> Result<Vec<ProcessInfo>, String> {
+pub fn get_processes(
+    state: tauri::State<'_, super::system::SystemState>,
+) -> Result<Vec<ProcessInfo>, String> {
     // 1. Acquire mutex ONLY for rapid snapshot collection, then drop lock immediately
     let raw_list: Vec<ProcessRawSnapshot> = {
         let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
@@ -67,7 +69,10 @@ pub fn get_processes(state: tauri::State<'_, super::system::SystemState>) -> Res
             let name = p.name().to_string_lossy().to_string();
             let lower_name = name.to_lowercase();
             let is_critical = CRITICAL_PROCESSES.iter().any(|c| lower_name == *c) || pid_u32 <= 4;
-            let exe_path = p.exe().map(|path| path.to_string_lossy().to_string()).unwrap_or_default();
+            let exe_path = p
+                .exe()
+                .map(|path| path.to_string_lossy().to_string())
+                .unwrap_or_default();
             let status = format!("{:?}", p.status());
             let disk_usage = p.disk_usage();
 
@@ -124,9 +129,9 @@ fn get_process_priority(pid: u32) -> String {
     {
         use windows_sys::Win32::Foundation::CloseHandle;
         use windows_sys::Win32::System::Threading::{
-            GetPriorityClass, OpenProcess, HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
+            GetPriorityClass, OpenProcess, ABOVE_NORMAL_PRIORITY_CLASS,
+            BELOW_NORMAL_PRIORITY_CLASS, HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
             NORMAL_PRIORITY_CLASS, PROCESS_QUERY_LIMITED_INFORMATION, REALTIME_PRIORITY_CLASS,
-            ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
         };
 
         unsafe {
@@ -158,7 +163,9 @@ pub fn terminate_process(pid: u32) -> Result<bool, String> {
     #[cfg(target_os = "windows")]
     {
         use windows_sys::Win32::Foundation::CloseHandle;
-        use windows_sys::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
+        use windows_sys::Win32::System::Threading::{
+            OpenProcess, TerminateProcess, PROCESS_TERMINATE,
+        };
 
         unsafe {
             let handle = OpenProcess(PROCESS_TERMINATE, 0, pid);
@@ -198,9 +205,9 @@ pub fn set_process_priority(pid: u32, priority: String) -> Result<bool, String> 
     {
         use windows_sys::Win32::Foundation::CloseHandle;
         use windows_sys::Win32::System::Threading::{
-            OpenProcess, SetPriorityClass, HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
-            NORMAL_PRIORITY_CLASS, PROCESS_SET_INFORMATION, ABOVE_NORMAL_PRIORITY_CLASS,
-            BELOW_NORMAL_PRIORITY_CLASS,
+            OpenProcess, SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS,
+            BELOW_NORMAL_PRIORITY_CLASS, HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
+            NORMAL_PRIORITY_CLASS, PROCESS_SET_INFORMATION,
         };
 
         let prio_class = match priority.to_lowercase().as_str() {
@@ -238,7 +245,9 @@ pub fn set_process_affinity(pid: u32, affinity_mask: usize) -> Result<bool, Stri
     #[cfg(target_os = "windows")]
     {
         use windows_sys::Win32::Foundation::CloseHandle;
-        use windows_sys::Win32::System::Threading::{OpenProcess, SetProcessAffinityMask, PROCESS_SET_INFORMATION};
+        use windows_sys::Win32::System::Threading::{
+            OpenProcess, SetProcessAffinityMask, PROCESS_SET_INFORMATION,
+        };
 
         unsafe {
             let handle = OpenProcess(PROCESS_SET_INFORMATION, 0, pid);
@@ -274,15 +283,25 @@ pub fn suspend_process(pid: u32) -> Result<bool, String> {
                 return Err("Access denied or process not found".into());
             }
 
-            type NtSuspendProcessFn = unsafe extern "system" fn(windows_sys::Win32::Foundation::HANDLE) -> i32;
-            let ntdll = windows_sys::Win32::System::LibraryLoader::GetModuleHandleA(b"ntdll.dll\0".as_ptr());
+            type NtSuspendProcessFn =
+                unsafe extern "system" fn(windows_sys::Win32::Foundation::HANDLE) -> i32;
+            let ntdll = windows_sys::Win32::System::LibraryLoader::GetModuleHandleA(
+                b"ntdll.dll\0".as_ptr(),
+            );
             if !ntdll.is_null() {
-                let proc_addr = windows_sys::Win32::System::LibraryLoader::GetProcAddress(ntdll, b"NtSuspendProcess\0".as_ptr());
+                let proc_addr = windows_sys::Win32::System::LibraryLoader::GetProcAddress(
+                    ntdll,
+                    b"NtSuspendProcess\0".as_ptr(),
+                );
                 if let Some(func) = proc_addr {
                     let suspend_fn: NtSuspendProcessFn = std::mem::transmute(func);
                     let status = suspend_fn(handle);
                     CloseHandle(handle);
-                    return if status >= 0 { Ok(true) } else { Err("NtSuspendProcess failed".into()) };
+                    return if status >= 0 {
+                        Ok(true)
+                    } else {
+                        Err("NtSuspendProcess failed".into())
+                    };
                 }
             }
             CloseHandle(handle);
@@ -309,15 +328,25 @@ pub fn resume_process(pid: u32) -> Result<bool, String> {
                 return Err("Access denied or process not found".into());
             }
 
-            type NtResumeProcessFn = unsafe extern "system" fn(windows_sys::Win32::Foundation::HANDLE) -> i32;
-            let ntdll = windows_sys::Win32::System::LibraryLoader::GetModuleHandleA(b"ntdll.dll\0".as_ptr());
+            type NtResumeProcessFn =
+                unsafe extern "system" fn(windows_sys::Win32::Foundation::HANDLE) -> i32;
+            let ntdll = windows_sys::Win32::System::LibraryLoader::GetModuleHandleA(
+                b"ntdll.dll\0".as_ptr(),
+            );
             if !ntdll.is_null() {
-                let proc_addr = windows_sys::Win32::System::LibraryLoader::GetProcAddress(ntdll, b"NtResumeProcess\0".as_ptr());
+                let proc_addr = windows_sys::Win32::System::LibraryLoader::GetProcAddress(
+                    ntdll,
+                    b"NtResumeProcess\0".as_ptr(),
+                );
                 if let Some(func) = proc_addr {
                     let resume_fn: NtResumeProcessFn = std::mem::transmute(func);
                     let status = resume_fn(handle);
                     CloseHandle(handle);
-                    return if status >= 0 { Ok(true) } else { Err("NtResumeProcess failed".into()) };
+                    return if status >= 0 {
+                        Ok(true)
+                    } else {
+                        Err("NtResumeProcess failed".into())
+                    };
                 }
             }
             CloseHandle(handle);

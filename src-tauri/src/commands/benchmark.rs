@@ -62,7 +62,9 @@ pub fn run_cpu_benchmark(db: tauri::State<'_, Database>) -> Result<BenchmarkResu
 
     let details = format!(
         "Multi-core CPU compute test across {} threads in {} ms (check: {})",
-        num_threads, duration_ms, total_acc % 1000
+        num_threads,
+        duration_ms,
+        total_acc % 1000
     );
 
     let _ = db.add_benchmark_log("CPU Multi-Core", score, duration_ms, &details);
@@ -101,7 +103,8 @@ pub fn run_memory_benchmark(db: tauri::State<'_, Database>) -> Result<BenchmarkR
 
     let details = format!(
         "Memory bandwidth: {:.2} MB/s throughput across 128MB sequential buffer (sum: {})",
-        throughput_mb_s, sum % 1000
+        throughput_mb_s,
+        sum % 1000
     );
 
     let _ = db.add_benchmark_log("Memory Bandwidth", score, duration_ms, &details);

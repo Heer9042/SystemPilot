@@ -20,7 +20,11 @@ pub fn get_settings(db: tauri::State<'_, Database>) -> Result<HashMap<String, St
 }
 
 #[tauri::command]
-pub fn set_setting(db: tauri::State<'_, Database>, key: String, value: String) -> Result<bool, String> {
+pub fn set_setting(
+    db: tauri::State<'_, Database>,
+    key: String,
+    value: String,
+) -> Result<bool, String> {
     db.set_setting(&key, &value).map_err(|e| e.to_string())?;
     Ok(true)
 }
@@ -41,7 +45,10 @@ pub fn window_toggle_maximize(window: tauri::Window) -> Result<(), String> {
 
 #[tauri::command]
 pub fn window_close(window: tauri::Window, db: tauri::State<'_, Database>) -> Result<(), String> {
-    let minimize_to_tray = db.get_setting("minimize_to_tray").unwrap_or_else(|| "true".into()) == "true";
+    let minimize_to_tray = db
+        .get_setting("minimize_to_tray")
+        .unwrap_or_else(|| "true".into())
+        == "true";
     if minimize_to_tray {
         window.hide().map_err(|e| e.to_string())
     } else {

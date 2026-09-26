@@ -10,8 +10,8 @@ use std::os::windows::ffi::OsStringExt;
 use windows_sys::Win32::Foundation::ERROR_SUCCESS;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Registry::{
-    RegCloseKey, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW, RegQueryValueExW, HKEY,
-    KEY_READ, REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ,
+    RegCloseKey, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW, RegQueryValueExW, HKEY, KEY_READ,
+    REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ,
 };
 
 #[cfg(target_os = "windows")]
@@ -75,10 +75,8 @@ pub fn get_reg_string(root: HKEY, subkey: &str, value_name: &str) -> Option<Stri
         }
 
         if val_type == REG_SZ || val_type == REG_EXPAND_SZ {
-            let u16_slice = std::slice::from_raw_parts(
-                buffer.as_ptr() as *const u16,
-                (data_size as usize) / 2,
-            );
+            let u16_slice =
+                std::slice::from_raw_parts(buffer.as_ptr() as *const u16, (data_size as usize) / 2);
             let s = from_wide_null_terminated(u16_slice);
             if !s.is_empty() {
                 return Some(s);

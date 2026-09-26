@@ -16,8 +16,8 @@ pub fn get_startup_items() -> Result<Vec<StartupItem>, String> {
 
     #[cfg(target_os = "windows")]
     {
-        use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
         use crate::windows::registry::enum_reg_values;
+        use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
 
         let run_key = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
@@ -68,8 +68,10 @@ pub fn get_startup_items() -> Result<Vec<StartupItem>, String> {
             if let Ok(entries) = std::fs::read_dir(startup_dir) {
                 for e in entries.flatten() {
                     if let Ok(file_name) = e.file_name().into_string() {
-                        if !file_name.starts_with('.') && file_name.to_lowercase() != "desktop.ini" {
-                            let id = format!("folder-{}", file_name.to_lowercase().replace(' ', "-"));
+                        if !file_name.starts_with('.') && file_name.to_lowercase() != "desktop.ini"
+                        {
+                            let id =
+                                format!("folder-{}", file_name.to_lowercase().replace(' ', "-"));
                             items.push(StartupItem {
                                 id,
                                 name: file_name.trim_end_matches(".lnk").to_string(),

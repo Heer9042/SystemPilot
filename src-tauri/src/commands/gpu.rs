@@ -31,10 +31,11 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
 
     #[cfg(target_os = "windows")]
     {
-        use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
         use crate::windows::registry::{enum_subkeys, get_reg_qword, get_reg_string};
+        use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 
-        let video_class = "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
+        let video_class =
+            "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
         let subkeys = enum_subkeys(HKEY_LOCAL_MACHINE, video_class);
 
         for sub in subkeys {
@@ -45,16 +46,29 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
                     .or_else(|| get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "AdapterString"))
                     .unwrap_or_default();
 
-                if name.is_empty() || name.to_lowercase().contains("remote") || name.to_lowercase().contains("mirror") {
+                if name.is_empty()
+                    || name.to_lowercase().contains("remote")
+                    || name.to_lowercase().contains("mirror")
+                {
                     continue;
                 }
 
                 let driver = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "DriverVersion")
                     .unwrap_or_else(|| "WDDM Standard".into());
 
-                let ram = get_reg_qword(HKEY_LOCAL_MACHINE, &adapter_key, "HardwareInformation.qwMemorySize")
-                    .or_else(|| get_reg_qword(HKEY_LOCAL_MACHINE, &adapter_key, "HardwareInformation.MemorySize"))
-                    .unwrap_or(0);
+                let ram = get_reg_qword(
+                    HKEY_LOCAL_MACHINE,
+                    &adapter_key,
+                    "HardwareInformation.qwMemorySize",
+                )
+                .or_else(|| {
+                    get_reg_qword(
+                        HKEY_LOCAL_MACHINE,
+                        &adapter_key,
+                        "HardwareInformation.MemorySize",
+                    )
+                })
+                .unwrap_or(0);
 
                 let provider = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "ProviderName")
                     .unwrap_or_default();
@@ -64,7 +78,10 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
 
                 let vendor = if lower_name.contains("nvidia") || lower_prov.contains("nvidia") {
                     "NVIDIA".into()
-                } else if lower_name.contains("amd") || lower_name.contains("radeon") || lower_prov.contains("advanced micro") {
+                } else if lower_name.contains("amd")
+                    || lower_name.contains("radeon")
+                    || lower_prov.contains("advanced micro")
+                {
                     "AMD".into()
                 } else if lower_name.contains("intel") || lower_prov.contains("intel") {
                     "Intel".into()
