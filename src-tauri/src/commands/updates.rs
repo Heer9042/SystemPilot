@@ -353,32 +353,41 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
 
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        use std::ffi::OsStr;
+        use std::os::windows::ffi::OsStrExt;
+        use windows_sys::Win32::UI::Shell::ShellExecuteW;
 
-        let ext = path
-            .extension()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_lowercase();
+        let path_str = path.to_str().ok_or("The file could not be processed.")?;
+        let wide_path: Vec<u16> = OsStr::new(path_str).encode_wide().chain(Some(0)).collect();
+        let wide_open: Vec<u16> = OsStr::new("open").encode_wide().chain(Some(0)).collect();
 
-        if ext == "msi" {
-            std::process::Command::new("msiexec.exe")
-                .args([
-                    "/i",
-                    path.to_str().ok_or("The file could not be processed.")?,
-                    "/qb",
-                ])
-                .creation_flags(CREATE_NO_WINDOW)
-                .spawn()
-                .map_err(|_| {
+        // Use ShellExecuteW so Windows handles UAC elevation smoothly without throwing error 748
+        let result = unsafe {
+            ShellExecuteW(
+                std::ptr::null_mut(),
+                wide_open.as_ptr(),
+                wide_path.as_ptr(),
+                std::ptr::null(),
+                std::ptr::null(),
+                1, // SW_SHOWNORMAL
+            )
+        };
+
+        if (result as isize) <= 32 {
+            // Fallback via PowerShell Start-Process with RunAs verb
+            let ps_script = format!(
+                "Start-Process -FilePath '{}' -Verb RunAs",
+                path_str.replace('\'', "''")
+            );
+            let status = std::process::Command::new("powershell")
+                .args(["-NoProfile", "-NonInteractive", "-Command", &ps_script])
+                .status();
+
+            if !status.map(|s| s.success()).unwrap_or(false) {
+                return Err(
                     "The installation could not be completed. Please try again.".to_string()
-                })?;
-        } else {
-            // For NSIS EXE installer: Standard interactive setup launch
-            std::process::Command::new(path).spawn().map_err(|_| {
-                "The installation could not be completed. Please try again.".to_string()
-            })?;
+                );
+            }
         }
 
         // Cleanly exit current application so Windows installer can update files

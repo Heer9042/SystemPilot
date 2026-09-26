@@ -343,11 +343,10 @@ export function Processes() {
               <button
                 key={prio}
                 onClick={() => setSelectedPriority(prio)}
-                className={`p-2.5 rounded-lg border text-xs font-semibold transition ${
-                  selectedPriority === prio
+                className={`p-2.5 rounded-lg border text-xs font-semibold transition ${selectedPriority === prio
                     ? 'bg-brand-600 text-white border-brand-500'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 dark:bg-surface-900 dark:text-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
-                }`}
+                  }`}
               >
                 {prio}
               </button>
