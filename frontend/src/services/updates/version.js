@@ -4,7 +4,7 @@
 import { api } from '../tauriApi.js';
 
 // Canonical Dynamic Version defined at build/runtime from package.json
-export const FALLBACK_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.2';
+export const FALLBACK_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
 export const APP_VERSION = FALLBACK_VERSION;
 
 /**

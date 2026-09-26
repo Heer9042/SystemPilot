@@ -2,7 +2,7 @@
 // Coordinates GitHub Releases, SHA-256 Verification, Tauri Native Integration, and UI State
 
 import { api } from '../tauriApi';
-import { getCurrentAppVersion, isNewerVersion } from './version';
+import { getCurrentAppVersion, isNewerVersion, APP_VERSION } from './version';
 import {
   UpdateStatus,
   UpdateChannel,
@@ -14,7 +14,7 @@ class UpdateService {
   constructor() {
     this.state = {
       status: UpdateStatus.IDLE,
-      currentVersion: '0.0.2',
+      currentVersion: APP_VERSION,
       latestRelease: null,
       error: null,
       progress: null,

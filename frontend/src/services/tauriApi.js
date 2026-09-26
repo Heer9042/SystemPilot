@@ -255,7 +255,7 @@ export const api = {
     if (inv) return await inv('get_app_version');
     return {
       name: 'SystemPilot',
-      version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.2',
+      version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0',
       target_arch: 'x64',
       target_os: 'windows',
       git_repository: 'Heer9042/SystemPilot',
