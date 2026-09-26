@@ -1,5 +1,5 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
 
 title SystemPilot - Production Executable Builder
 
@@ -38,43 +38,31 @@ echo [OK] Node.js and Rust detected.
 echo.
 
 echo [2/3] Compiling Application (Frontend + Tauri 2 Backend)...
+
+:: Build frontend
+call npm --prefix frontend run build
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Frontend build failed.
+    pause
+    exit /b 1
+)
+
+:: Build Tauri Desktop Application (NSIS + MSI)
 call npm run tauri build
 if %ERRORLEVEL% neq 0 (
-    echo.
-    echo [ERROR] Build failed.
+    echo [ERROR] Application compilation failed.
     pause
     exit /b 1
 )
 
 echo.
 echo [3/3] Packaging Release Artifacts and DLLs...
-if not exist "release" mkdir "release"
-
-:: Ensure WebView2Loader.dll is copied alongside standalone executable
-if exist "src-tauri\target\release\WebView2Loader.dll" (
-    copy /y "src-tauri\target\release\WebView2Loader.dll" "release\WebView2Loader.dll" >nul
-    copy /y "src-tauri\target\release\WebView2Loader.dll" "src-tauri\resources\WebView2Loader.dll" >nul 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\package_release.ps1"
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Packaging release artifacts failed.
+    pause
+    exit /b 1
 )
-
-if exist "src-tauri\target\release\systempilot.exe" (
-    copy /y "src-tauri\target\release\systempilot.exe" "release\SystemPilot.exe" >nul
-)
-
-:: Copy NSIS Installer
-for %%F in (src-tauri\target\release\bundle\nsis\*.exe) do (
-    copy /y "%%F" "release\SystemPilot-Setup.exe" >nul
-)
-
-:: Copy MSI Installer
-for %%F in (src-tauri\target\release\bundle\msi\*.msi) do (
-    copy /y "%%F" "release\SystemPilot.msi" >nul
-)
-
-:: Create Portable ZIP with Executable and DLL
-powershell -NoProfile -Command "if (Test-Path 'release/SystemPilot.exe') { Compress-Archive -Path 'release/SystemPilot.exe','release/WebView2Loader.dll' -DestinationPath 'release/SystemPilot-Portable.zip' -Force }"
-
-:: Generate SHA256 Checksums for all release artifacts
-powershell -NoProfile -Command "$items = Get-ChildItem -Path 'release/*' -Exclude 'SHA256SUMS.txt'; $lines = @(); foreach ($i in $items) { $h = (Get-FileHash -Path $i.FullName -Algorithm SHA256).Hash; $lines += \"$h  $($i.Name)\" }; $lines | Out-File -FilePath 'release/SHA256SUMS.txt' -Encoding ascii"
 
 echo.
 echo ========================================================
@@ -85,16 +73,16 @@ echo All ready-to-use release files are in: %~dp0release\
 echo.
 echo   1. Release Directory (Standalone):
 echo      - %~dp0release\SystemPilot.exe
-echo      - %~dp0release\WebView2Loader.dll (required alongside .exe)
+echo      - %~dp0release\WebView2Loader.dll
 echo.
 echo   2. Portable ZIP:
 echo      - %~dp0release\SystemPilot-Portable.zip
 echo.
 echo   3. Installers:
-echo      - %~dp0release\SystemPilot-Setup.exe (NSIS Installer)
-echo      - %~dp0release\SystemPilot.msi (Windows Installer)
+echo      - %~dp0release\SystemPilot-Setup.exe (NSIS Setup Installer)
+echo      - %~dp0release\SystemPilot.msi (Windows MSI Package)
 echo.
-echo   4. Checksums:
+echo   4. Cryptographic Checksums:
 echo      - %~dp0release\SHA256SUMS.txt
 echo.
 pause
