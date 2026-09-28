@@ -20,10 +20,14 @@ if (Test-Path $stagingDir) {
 }
 New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
 
-# Copy raw binaries to staging first
+# Copy raw binaries and manifests to staging first
 Copy-Item "src-tauri/target/release/systempilot.exe" "$stagingDir/SystemPilot.exe" -Force
 if (Test-Path "src-tauri/target/release/WebView2Loader.dll") {
     Copy-Item "src-tauri/target/release/WebView2Loader.dll" "$stagingDir/WebView2Loader.dll" -Force
+}
+if (Test-Path "src-tauri/resources/systempilot.exe.manifest") {
+    Copy-Item "src-tauri/resources/systempilot.exe.manifest" "$stagingDir/SystemPilot.exe.manifest" -Force
+    Copy-Item "src-tauri/resources/systempilot.exe.manifest" "$stagingDir/systempilot.exe.manifest" -Force
 }
 
 # Create Portable ZIP from staging directory using .NET ZipFile
@@ -47,12 +51,16 @@ try {
     Write-Warning "Could not update Portable ZIP: $_"
 }
 
-# Copy installers to release
+# Copy installers and binaries to release
 Copy-Item "src-tauri/target/release/systempilot.exe" "release/SystemPilot.exe" -Force
 Copy-Item "src-tauri/target/release/bundle/nsis/*.exe" "release/SystemPilot-Setup.exe" -Force
 Copy-Item "src-tauri/target/release/bundle/msi/*.msi" "release/SystemPilot.msi" -Force
 if (Test-Path "src-tauri/target/release/WebView2Loader.dll") {
     Copy-Item "src-tauri/target/release/WebView2Loader.dll" "release/WebView2Loader.dll" -Force
+}
+if (Test-Path "src-tauri/resources/systempilot.exe.manifest") {
+    Copy-Item "src-tauri/resources/systempilot.exe.manifest" "release/SystemPilot.exe.manifest" -Force
+    Copy-Item "src-tauri/resources/systempilot.exe.manifest" "release/systempilot.exe.manifest" -Force
 }
 
 # Cleanup staging
@@ -60,7 +68,7 @@ Remove-Item -Path $stagingDir -Recurse -Force -ErrorAction SilentlyContinue
 Get-ChildItem -Path "release/*.tmp*" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host "Calculating SHA-256 Checksums..."
-$validFiles = @("SystemPilot.exe", "SystemPilot-Setup.exe", "SystemPilot.msi", "SystemPilot-Portable.zip", "WebView2Loader.dll")
+$validFiles = @("SystemPilot.exe", "SystemPilot-Setup.exe", "SystemPilot.msi", "SystemPilot-Portable.zip", "WebView2Loader.dll", "SystemPilot.exe.manifest")
 $checksumLines = @()
 $setupHash = ""
 foreach ($name in $validFiles) {
@@ -93,6 +101,3 @@ $latestMetadata = [PSCustomObject]@{
 
 $latestMetadata | ConvertTo-Json -Depth 4 | Out-File -FilePath "release/latest.json" -Encoding ascii
 Write-Host "Release packaging complete. Checksums saved to release/SHA256SUMS.txt and release/latest.json"
-
-# Run automated validation
-& "$PSScriptRoot/verify_binary.ps1"

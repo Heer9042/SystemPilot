@@ -67,15 +67,15 @@ export function MemoryBreakdownBar({
     <div className="w-full flex flex-col gap-2">
       <div className="h-6 w-full rounded-xl overflow-hidden flex bg-slate-100 dark:bg-surface-900 border border-slate-300/80 dark:border-slate-700/40 p-0.5">
         <div
-          className="bg-brand-500 h-full rounded-l-lg transition-all duration-300 relative group"
+          className="bg-brand-500 h-full rounded-l-lg transition-[width] duration-300 relative group"
           style={{ width: `${usedPct}%` }}
         />
         <div
-          className="bg-amber-500/80 h-full transition-all duration-300 relative group"
+          className="bg-amber-500/80 h-full transition-[width] duration-300 relative group"
           style={{ width: `${standbyPct}%` }}
         />
         <div
-          className="bg-emerald-500/80 h-full rounded-r-lg transition-all duration-300 relative group"
+          className="bg-emerald-500/80 h-full rounded-r-lg transition-[width] duration-300 relative group"
           style={{ width: `${freePct}%` }}
         />
       </div>

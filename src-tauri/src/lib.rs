@@ -53,6 +53,7 @@ pub fn run() {
             commands::power::set_power_plan,
             // Startup & Cleanup
             commands::startup::get_startup_items,
+            commands::startup::toggle_startup_item,
             commands::cleanup::scan_cleanable_items,
             commands::cleanup::execute_cleanup,
             commands::cleanup::get_cleanup_history,

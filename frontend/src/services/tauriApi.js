@@ -132,6 +132,12 @@ export const api = {
     return [];
   },
 
+  async toggleStartupItem(itemId, enable) {
+    const inv = await getInvoke();
+    if (inv) return await inv('toggle_startup_item', { itemId, enable });
+    throw new Error('System service is temporarily unavailable');
+  },
+
   async scanCleanableItems() {
     const inv = await getInvoke();
     if (inv) return await inv('scan_cleanable_items');

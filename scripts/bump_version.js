@@ -36,6 +36,7 @@ const FILES = {
   cargoToml: path.join(ROOT_DIR, 'src-tauri', 'Cargo.toml'),
   tauriConf: path.join(ROOT_DIR, 'src-tauri', 'tauri.conf.json'),
   securityMd: path.join(ROOT_DIR, 'SECURITY.md'),
+  latestJson: path.join(ROOT_DIR, 'release', 'latest.json'),
 };
 
 const SEMVER_REGEX = /^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/;
@@ -173,6 +174,16 @@ export function syncAllVersions(targetVersion) {
   // 7. SECURITY.md
   if (updateFile(FILES.securityMd, content => {
     return content.replace(/\|\s*<\s*[\d\.]+\s*\|\s*:x:\s*\|/g, `| < ${cleanVer} | :x:                |`);
+  })) changedCount++;
+
+  // 8. release/latest.json
+  if (updateFile(FILES.latestJson, content => {
+    const json = JSON.parse(content);
+    json.version = cleanVer;
+    json.downloadUrl = `https://github.com/Heer9042/SystemPilot/releases/download/v${cleanVer}/SystemPilot-Setup.exe`;
+    json.releaseNotes = `Official release v${cleanVer} - Performance optimizations, security updates, and bug fixes.`;
+    json.publishedAt = new Date().toISOString().split('T')[0];
+    return JSON.stringify(json, null, 2) + '\n';
   })) changedCount++;
 
   // Post-synchronization verification

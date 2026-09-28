@@ -30,21 +30,28 @@ export function useTheme() {
   }, [getSystemTheme]);
 
   useEffect(() => {
+    let cancelled = false;
     async function loadSavedTheme() {
+      const cached = typeof window !== 'undefined' ? localStorage.getItem('systempilot_theme') : null;
       try {
         const settings = await api.getSettings();
-        if (settings?.theme) {
-          setTheme(settings.theme);
-          localStorage.setItem('systempilot_theme', settings.theme);
-          applyThemeToDOM(settings.theme);
-        } else {
-          applyThemeToDOM(theme);
+        if (cancelled) return;
+        const targetTheme = settings?.theme || cached || 'dark';
+        setTheme(targetTheme);
+        if (targetTheme !== cached && typeof window !== 'undefined') {
+          localStorage.setItem('systempilot_theme', targetTheme);
         }
+        applyThemeToDOM(targetTheme);
       } catch (e) {
-        applyThemeToDOM(theme);
+        if (!cancelled) {
+          applyThemeToDOM(cached || 'dark');
+        }
       }
     }
     loadSavedTheme();
+    return () => {
+      cancelled = true;
+    };
   }, [applyThemeToDOM]);
 
   // Listen for OS / Windows system theme changes if theme === 'system'

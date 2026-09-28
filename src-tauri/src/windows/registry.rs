@@ -10,8 +10,9 @@ use std::os::windows::ffi::OsStringExt;
 use windows_sys::Win32::Foundation::ERROR_SUCCESS;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Registry::{
-    RegCloseKey, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW, RegQueryValueExW, HKEY, KEY_READ,
-    REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ,
+    RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW,
+    RegQueryValueExW, RegSetValueExW, HKEY, KEY_READ, KEY_WRITE, REG_DWORD,
+    REG_EXPAND_SZ, REG_OPTION_NON_VOLATILE, REG_QWORD, REG_SZ,
 };
 
 #[cfg(target_os = "windows")]
@@ -219,6 +220,81 @@ pub fn enum_reg_values(root: HKEY, subkey: &str) -> Vec<(String, String)> {
         RegCloseKey(hkey);
     }
     entries
+}
+
+/// Write a REG_SZ string value to the registry (creates the key if needed).
+/// Only use for HKCU paths which do not require elevation.
+#[cfg(target_os = "windows")]
+pub fn set_reg_string(root: HKEY, subkey: &str, value_name: &str, value: &str) -> Result<(), String> {
+    unsafe {
+        let wide_subkey = to_wide_chars(subkey);
+        let mut hkey: HKEY = std::ptr::null_mut();
+        let mut disposition: u32 = 0;
+
+        let res = RegCreateKeyExW(
+            root,
+            wide_subkey.as_ptr(),
+            0,
+            std::ptr::null_mut(),
+            REG_OPTION_NON_VOLATILE,
+            KEY_WRITE,
+            std::ptr::null_mut(),
+            &mut hkey,
+            &mut disposition,
+        );
+
+        if res != 0 {
+            return Err(format!("RegCreateKeyExW failed with code {}", res));
+        }
+
+        let wide_val = to_wide_chars(value_name);
+        let wide_data: Vec<u16> = value.encode_utf16().chain(std::iter::once(0)).collect();
+        let byte_data: &[u8] = std::slice::from_raw_parts(
+            wide_data.as_ptr() as *const u8,
+            wide_data.len() * 2,
+        );
+
+        let res2 = RegSetValueExW(
+            hkey,
+            wide_val.as_ptr(),
+            0,
+            REG_SZ,
+            byte_data.as_ptr(),
+            byte_data.len() as u32,
+        );
+
+        RegCloseKey(hkey);
+
+        if res2 != 0 {
+            Err(format!("RegSetValueExW failed with code {}", res2))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// Delete a registry value.
+#[cfg(target_os = "windows")]
+pub fn delete_reg_value(root: HKEY, subkey: &str, value_name: &str) -> Result<(), String> {
+    unsafe {
+        let wide_subkey = to_wide_chars(subkey);
+        let mut hkey: HKEY = std::ptr::null_mut();
+
+        let res = RegOpenKeyExW(root, wide_subkey.as_ptr(), 0, KEY_WRITE, &mut hkey);
+        if res != 0 {
+            return Err(format!("RegOpenKeyExW failed with code {}", res));
+        }
+
+        let wide_val = to_wide_chars(value_name);
+        let res2 = RegDeleteValueW(hkey, wide_val.as_ptr());
+        RegCloseKey(hkey);
+
+        if res2 != 0 {
+            Err(format!("RegDeleteValueW failed with code {}", res2))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 #[cfg(target_os = "windows")]

@@ -70,8 +70,8 @@ export function NetworkMonitor({ stats, history }) {
         </div>
 
         <div className="divide-y divide-slate-200 dark:divide-slate-800/80">
-          {interfaces.map((iface, idx) => (
-            <div key={idx} className="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          {interfaces.map((iface) => (
+            <div key={iface.name || iface.mac_address} className="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-slate-900 dark:text-slate-200 text-xs">{iface.name}</span>

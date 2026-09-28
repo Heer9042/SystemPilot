@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Sidebar, NAVIGATION_ITEMS } from './components/layout/Sidebar';
+import { Sidebar } from './components/layout/Sidebar';
+import { NAVIGATION_ITEMS } from './components/layout/navigationItems';
 import { TopBar } from './components/layout/TopBar';
 import { FirstRunWizard } from './components/onboarding/FirstRunWizard';
 import { PageLoading } from './components/common/PageLoading';
@@ -143,46 +144,89 @@ export function App() {
         )}
 
         {/* Dynamic Toast Notification */}
-        {toast && (
-          <div className="fixed top-14 right-6 z-50 animate-bounce">
-            <div className="glass-panel px-4 py-2.5 rounded-xl border border-brand-500/50 shadow-2xl bg-white/95 dark:bg-surface-900/95 text-xs text-brand-600 dark:text-brand-300 font-medium flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand-500 animate-ping" />
-              {toast}
-            </div>
-          </div>
-        )}
+        <AppToast toast={toast} />
 
         {/* Scrollable Viewport with Error and Suspense Boundaries */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
           <ErrorBoundary>
             <Suspense fallback={<PageLoading />}>
-              {activeTab === 'dashboard' && (
-                <Dashboard
-                  stats={stats}
-                  history={history}
-                  onCleanMemory={handleQuickClean}
-                  setActiveTab={setActiveTab}
-                />
-              )}
-              {activeTab === 'processes' && <Processes />}
-              {activeTab === 'memory' && <Memory stats={stats} />}
-              {activeTab === 'cpu' && <CpuManager stats={stats} history={history} />}
-              {activeTab === 'gpu' && <GpuMonitor />}
-              {activeTab === 'disk' && <DiskMonitor stats={stats} />}
-              {activeTab === 'network' && <NetworkMonitor stats={stats} history={history} />}
-              {activeTab === 'performance' && <Performance />}
-              {activeTab === 'startup' && <StartupManager />}
-              {activeTab === 'cleanup' && <CleanupCenter />}
-              {activeTab === 'hardware' && <HardwareMonitor stats={stats} />}
-              {activeTab === 'security' && <SecurityCenter />}
-              {activeTab === 'benchmark' && <Benchmark />}
-              {activeTab === 'settings' && <Settings theme={theme} toggleTheme={toggleTheme} />}
+              <AppTabContent
+                activeTab={activeTab}
+                stats={stats}
+                history={history}
+                onCleanMemory={handleQuickClean}
+                setActiveTab={setActiveTab}
+                theme={theme}
+                toggleTheme={toggleTheme}
+              />
             </Suspense>
           </ErrorBoundary>
         </main>
       </div>
     </div>
   );
+}
+
+function AppToast({ toast }) {
+  if (!toast) return null;
+  return (
+    <div className="fixed top-14 right-6 z-50 animate-bounce">
+      <div className="glass-panel px-4 py-2.5 rounded-xl border border-brand-500/50 shadow-2xl bg-white/95 dark:bg-surface-900/95 text-xs text-brand-600 dark:text-brand-300 font-medium flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-brand-500 animate-ping" />
+        {toast}
+      </div>
+    </div>
+  );
+}
+
+function AppTabContent({
+  activeTab,
+  stats,
+  history,
+  onCleanMemory,
+  setActiveTab,
+  theme,
+  toggleTheme,
+}) {
+  switch (activeTab) {
+    case 'dashboard':
+      return (
+        <Dashboard
+          stats={stats}
+          history={history}
+          onCleanMemory={onCleanMemory}
+          setActiveTab={setActiveTab}
+        />
+      );
+    case 'processes':
+      return <Processes />;
+    case 'memory':
+      return <Memory stats={stats} />;
+    case 'cpu':
+      return <CpuManager stats={stats} history={history} />;
+    case 'gpu':
+      return <GpuMonitor />;
+    case 'disk':
+      return <DiskMonitor stats={stats} />;
+    case 'network':
+      return <NetworkMonitor stats={stats} history={history} />;
+    case 'performance':
+      return <Performance />;
+    case 'startup':
+      return <StartupManager />;
+    case 'cleanup':
+      return <CleanupCenter />;
+    case 'hardware':
+      return <HardwareMonitor stats={stats} />;
+    case 'security':
+      return <SecurityCenter />;
+    case 'benchmark':
+      return <Benchmark />;
+    case 'settings':
+      return <Settings theme={theme} toggleTheme={toggleTheme} />;
+    default:
+      return null;
+  }
 }
 
 export default App;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { api } from '../services/tauriApi';
 import { formatBytes } from '../utils/formatters';
@@ -18,9 +18,191 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
+function ProcessTableHeader({ sortField, sortAsc, onSort }) {
+  return (
+    <thead className="sticky top-0 bg-slate-100/95 dark:bg-surface-950/95 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 select-none z-10">
+      <tr>
+        <th
+          tabIndex={0}
+          role="button"
+          onClick={() => onSort('name')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSort('name');
+            }
+          }}
+          className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition focus:outline-none focus:underline"
+        >
+          <div className="flex items-center gap-1">
+            Application Name
+            {sortField === 'name' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+          </div>
+        </th>
+        <th
+          tabIndex={0}
+          role="button"
+          onClick={() => onSort('pid')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSort('pid');
+            }
+          }}
+          className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition focus:outline-none focus:underline"
+        >
+          <div className="flex items-center gap-1">
+            Process ID
+            {sortField === 'pid' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+          </div>
+        </th>
+        <th
+          tabIndex={0}
+          role="button"
+          onClick={() => onSort('cpu_usage')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSort('cpu_usage');
+            }
+          }}
+          className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition focus:outline-none focus:underline"
+        >
+          <div className="flex items-center gap-1">
+            CPU %
+            {sortField === 'cpu_usage' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+          </div>
+        </th>
+        <th
+          tabIndex={0}
+          role="button"
+          onClick={() => onSort('memory_bytes')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSort('memory_bytes');
+            }
+          }}
+          className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition focus:outline-none focus:underline"
+        >
+          <div className="flex items-center gap-1">
+            Working Set (RAM)
+            {sortField === 'memory_bytes' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+          </div>
+        </th>
+        <th className="py-3 px-4">Priority</th>
+        <th className="py-3 px-4 text-right">Actions</th>
+      </tr>
+    </thead>
+  );
+}
+
+function ProcessTableRow({ process: p, onOpenPriority, onSuspend, onResume, onTerminate }) {
+  return (
+    <tr className="hover:bg-slate-50 dark:hover:bg-surface-800/40 transition group text-slate-700 dark:text-slate-300">
+      <td className="py-2.5 px-4 font-sans font-medium text-slate-900 dark:text-slate-200">
+        <div className="flex items-center gap-2">
+          {p.is_critical && (
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" title="System Process" />
+          )}
+          <span className="truncate max-w-xs">{p.name}</span>
+        </div>
+      </td>
+      <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400">{p.pid}</td>
+      <td className="py-2.5 px-4">
+        <span className={p.cpu_usage > 5 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-700 dark:text-slate-300'}>
+          {p.cpu_usage.toFixed(1)}%
+        </span>
+      </td>
+      <td className="py-2.5 px-4 text-slate-900 dark:text-slate-200">{formatBytes(p.memory_bytes)}</td>
+      <td className="py-2.5 px-4">
+        <Badge variant="neutral" size="xs">
+          {p.priority}
+        </Badge>
+      </td>
+      <td className="py-2.5 px-4 text-right">
+        <div className="flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition">
+          <button
+            type="button"
+            onClick={() => onOpenPriority(p)}
+            title="Change Priority"
+            className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onSuspend(p.pid)}
+            title="Suspend"
+            className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-amber-600 dark:text-amber-400"
+          >
+            <PauseCircle className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onResume(p.pid)}
+            title="Resume"
+            className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-emerald-600 dark:text-emerald-400"
+          >
+            <PlayCircle className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onTerminate(p.pid, p.is_critical)}
+            title="End Task"
+            className="p-1 rounded bg-slate-100 hover:bg-red-500 hover:text-white dark:bg-surface-800 dark:hover:bg-red-600/80 text-rose-600 dark:text-rose-400 dark:hover:text-white transition"
+          >
+            <XCircle className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function ProcessPriorityModal({ isOpen, onClose, selectedProcess, selectedPriority, setSelectedPriority, onApply }) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Set Priority: ${selectedProcess?.name}`}
+      footer={
+        <>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={onApply}>
+            Apply Priority
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Changing process priority allocates more or fewer CPU scheduling cycles. Setting priority to High gives precedence over background applications.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {['Low', 'Below Normal', 'Normal', 'Above Normal', 'High'].map((prio) => (
+            <button
+              key={prio}
+              type="button"
+              onClick={() => setSelectedPriority(prio)}
+              className={`p-2.5 rounded-lg border text-xs font-semibold transition ${selectedPriority === prio
+                  ? 'bg-brand-600 text-white border-brand-500'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 dark:bg-surface-900 dark:text-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
+                }`}
+            >
+              {prio}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function Processes() {
   const [processes, setProcesses] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('memory_bytes');
   const [sortAsc, setSortAsc] = useState(false);
@@ -42,7 +224,6 @@ export function Processes() {
       console.error(err);
     } finally {
       isFetchingRef.current = false;
-      setLoading(false);
     }
   };
 
@@ -59,26 +240,27 @@ export function Processes() {
       setSortField(field);
       setSortAsc(false);
     }
-    setCurrentPage(1);
   };
 
   const filteredProcesses = useMemo(() => {
     return processes
       .filter((p) => {
-        const query = search.toLowerCase();
+        if (!search) return true;
+        const q = search.toLowerCase();
         return (
-          p.name.toLowerCase().includes(query) ||
-          p.pid.toString().includes(query) ||
-          p.exe_path.toLowerCase().includes(query)
+          p.name.toLowerCase().includes(q) ||
+          p.pid.toString().includes(q) ||
+          (p.exe_path && p.exe_path.toLowerCase().includes(q))
         );
       })
       .sort((a, b) => {
         let valA = a[sortField];
         let valB = b[sortField];
-        if (typeof valA === 'string') {
-          return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        }
-        return sortAsc ? valA - valB : valB - valA;
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
       });
   }, [processes, search, sortField, sortAsc]);
 
@@ -88,7 +270,6 @@ export function Processes() {
     return filteredProcesses.slice(start, start + pageSize);
   }, [filteredProcesses, currentPage, pageSize]);
 
-  // Reset page to 1 if search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
@@ -148,6 +329,7 @@ export function Processes() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
           <input
             type="text"
+            aria-label="Search applications, process ID, or location"
             placeholder="Search applications, process ID, or location..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -168,7 +350,14 @@ export function Processes() {
       {statusMessage && (
         <div className="p-2.5 rounded-lg bg-brand-50 dark:bg-surface-900 border border-brand-200 dark:border-brand-500/30 text-xs text-brand-700 dark:text-brand-300 flex items-center justify-between">
           <span>{statusMessage}</span>
-          <button onClick={() => setStatusMessage(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
+          <button
+            type="button"
+            aria-label="Dismiss notification"
+            onClick={() => setStatusMessage(null)}
+            className="text-slate-400 hover:text-slate-700 dark:hover:text-white"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -176,111 +365,25 @@ export function Processes() {
       <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
           <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-slate-100/95 dark:bg-surface-950/95 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 select-none z-10">
-              <tr>
-                <th
-                  onClick={() => handleSort('name')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
-                >
-                  <div className="flex items-center gap-1">
-                    Application Name
-                    {sortField === 'name' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('pid')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
-                >
-                  <div className="flex items-center gap-1">
-                    Process ID
-                    {sortField === 'pid' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('cpu_usage')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
-                >
-                  <div className="flex items-center gap-1">
-                    CPU %
-                    {sortField === 'cpu_usage' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('memory_bytes')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition"
-                >
-                  <div className="flex items-center gap-1">
-                    Working Set (RAM)
-                    {sortField === 'memory_bytes' && (sortAsc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                  </div>
-                </th>
-                <th className="py-3 px-4">Priority</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
+            <ProcessTableHeader
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+            />
             <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800/60 font-mono">
               {paginatedProcesses.map((p) => (
-                <tr
+                <ProcessTableRow
                   key={p.pid}
-                  className="hover:bg-slate-50 dark:hover:bg-surface-800/40 transition group text-slate-700 dark:text-slate-300"
-                >
-                  <td className="py-2.5 px-4 font-sans font-medium text-slate-900 dark:text-slate-200">
-                    <div className="flex items-center gap-2">
-                      {p.is_critical && (
-                        <ShieldAlert className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" title="System Process" />
-                      )}
-                      <span className="truncate max-w-xs">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400">{p.pid}</td>
-                  <td className="py-2.5 px-4">
-                    <span className={p.cpu_usage > 5 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-700 dark:text-slate-300'}>
-                      {p.cpu_usage.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-4 text-slate-900 dark:text-slate-200">{formatBytes(p.memory_bytes)}</td>
-                  <td className="py-2.5 px-4">
-                    <Badge variant="neutral" size="xs">
-                      {p.priority}
-                    </Badge>
-                  </td>
-                  <td className="py-2.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition">
-                      <button
-                        onClick={() => {
-                          setSelectedProcess(p);
-                          setSelectedPriority(p.priority);
-                          setPriorityModal(true);
-                        }}
-                        title="Change Priority"
-                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                      >
-                        <Sliders className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleSuspend(p.pid)}
-                        title="Suspend"
-                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-amber-600 dark:text-amber-400"
-                      >
-                        <PauseCircle className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleResume(p.pid)}
-                        title="Resume"
-                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-surface-800 dark:hover:bg-surface-700 text-emerald-600 dark:text-emerald-400"
-                      >
-                        <PlayCircle className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleTerminate(p.pid, p.is_critical)}
-                        title="End Task"
-                        className="p-1 rounded bg-slate-100 hover:bg-red-500 hover:text-white dark:bg-surface-800 dark:hover:bg-red-600/80 text-rose-600 dark:text-rose-400 dark:hover:text-white transition"
-                      >
-                        <XCircle className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                  process={p}
+                  onOpenPriority={(proc) => {
+                    setSelectedProcess(proc);
+                    setSelectedPriority(proc.priority);
+                    setPriorityModal(true);
+                  }}
+                  onSuspend={handleSuspend}
+                  onResume={handleResume}
+                  onTerminate={handleTerminate}
+                />
               ))}
             </tbody>
           </table>
@@ -318,42 +421,14 @@ export function Processes() {
         )}
       </Card>
 
-      {/* Priority Modal */}
-      <Modal
+      <ProcessPriorityModal
         isOpen={priorityModal}
         onClose={() => setPriorityModal(false)}
-        title={`Set Priority: ${selectedProcess?.name}`}
-        footer={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => setPriorityModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" onClick={handleSetPriority}>
-              Apply Priority
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Changing process priority allocates more or fewer CPU scheduling cycles. Setting priority to High gives precedence over background applications.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {['Low', 'Below Normal', 'Normal', 'Above Normal', 'High'].map((prio) => (
-              <button
-                key={prio}
-                onClick={() => setSelectedPriority(prio)}
-                className={`p-2.5 rounded-lg border text-xs font-semibold transition ${selectedPriority === prio
-                    ? 'bg-brand-600 text-white border-brand-500'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 dark:bg-surface-900 dark:text-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
-                  }`}
-              >
-                {prio}
-              </button>
-            ))}
-          </div>
-        </div>
-      </Modal>
+        selectedProcess={selectedProcess}
+        selectedPriority={selectedPriority}
+        setSelectedPriority={setSelectedPriority}
+        onApply={handleSetPriority}
+      />
     </div>
   );
 }

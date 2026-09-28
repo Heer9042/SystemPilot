@@ -227,6 +227,7 @@ export function Benchmark() {
           ) : (
             <div className="flex items-center gap-2">
               <select
+                aria-label="Stress test duration"
                 value={stressSeconds}
                 onChange={(e) => setStressSeconds(Number(e.target.value))}
                 className="bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200"
@@ -255,9 +256,9 @@ export function Benchmark() {
           {history.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-4">No benchmark runs recorded yet.</p>
           ) : (
-            history.map((h, i) => (
+            history.map((h) => (
               <div
-                key={i}
+                key={h.id || `${h.timestamp}-${h.test_type}`}
                 className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-mono"
               >
                 <div>

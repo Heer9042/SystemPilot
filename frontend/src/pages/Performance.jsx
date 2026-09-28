@@ -64,7 +64,7 @@ export function Performance() {
       {statusMessage && (
         <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
           <span>{statusMessage}</span>
-          <button onClick={() => setStatusMessage(null)}>✕</button>
+          <button type="button" aria-label="Dismiss status notification" onClick={() => setStatusMessage(null)}>✕</button>
         </div>
       )}
 
@@ -78,7 +78,7 @@ export function Performance() {
           return (
             <Card
               key={plan.guid}
-              className={`p-5 flex flex-col justify-between transition-all ${isActive
+              className={`p-5 flex flex-col justify-between transition-colors ${isActive
                   ? 'border-brand-500/60 shadow-lg shadow-brand-500/10 bg-brand-50/20 dark:bg-surface-900'
                   : 'border-slate-200 dark:border-slate-800'
                 }`}

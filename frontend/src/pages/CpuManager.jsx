@@ -75,13 +75,13 @@ export function CpuManager({ stats, history }) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-          {cores.map((usage, idx) => (
+          {cores.map((usage, coreNumber) => (
             <div
-              key={idx}
+              key={`cpu-core-${coreNumber}`}
               className="p-2.5 rounded-lg bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800/80 flex flex-col justify-between gap-1.5"
             >
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-600 dark:text-slate-400 font-medium">Core #{idx}</span>
+                <span className="text-slate-600 dark:text-slate-400 font-medium">Core #{coreNumber}</span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{Math.round(usage)}%</span>
               </div>
               <ProgressBar value={usage} size="xs" />

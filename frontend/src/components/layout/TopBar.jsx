@@ -68,7 +68,8 @@ export function TopBar({
         <button
           onClick={toggleTheme}
           title="Toggle Dark/Light Mode"
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-800 transition"
+          aria-label="Toggle Dark/Light Mode"
+          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-800 transition-colors"
         >
           {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-indigo-600" />}
         </button>
@@ -78,19 +79,22 @@ export function TopBar({
         {/* Window controls */}
         <button
           onClick={handleMinimize}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-800 transition"
+          aria-label="Minimize window"
+          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-800 transition-colors"
         >
           <Minus className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={handleMaximize}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-800 transition"
+          aria-label="Maximize window"
+          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-800 transition-colors"
         >
           <Square className="w-3 h-3" />
         </button>
         <button
           onClick={handleClose}
-          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-red-600 transition"
+          aria-label="Close window"
+          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-red-600 transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>

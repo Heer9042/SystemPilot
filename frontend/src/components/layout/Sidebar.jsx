@@ -1,40 +1,7 @@
 import React, { useState } from 'react';
 import { APP_VERSION } from '../../services/updates/version';
-import {
-  LayoutDashboard,
-  Activity,
-  Cpu,
-  Tv,
-  HardDrive,
-  Wifi,
-  Gauge,
-  Rocket,
-  Sparkles,
-  CircuitBoard,
-  ShieldCheck,
-  Timer,
-  Settings as SettingsIcon,
-  Layers,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
-
-export const NAVIGATION_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'processes', label: 'Processes', icon: Activity },
-  { id: 'memory', label: 'Memory', icon: Layers, badge: 'Crucial' },
-  { id: 'cpu', label: 'CPU', icon: Cpu },
-  { id: 'gpu', label: 'GPU', icon: Tv },
-  { id: 'disk', label: 'Disk', icon: HardDrive },
-  { id: 'network', label: 'Network', icon: Wifi },
-  { id: 'performance', label: 'Performance', icon: Gauge },
-  { id: 'startup', label: 'Startup', icon: Rocket },
-  { id: 'cleanup', label: 'Cleanup', icon: Sparkles },
-  { id: 'hardware', label: 'Hardware', icon: CircuitBoard },
-  { id: 'security', label: 'Security', icon: ShieldCheck },
-  { id: 'benchmark', label: 'Benchmark', icon: Timer },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon },
-];
+import { ChevronLeft, ChevronRight, Gauge, Sparkles } from 'lucide-react';
+import { NAVIGATION_ITEMS } from './navigationItems';
 
 export function Sidebar({ activeTab, setActiveTab, onQuickClean, ramUsagePercent }) {
   const [collapsed, setCollapsed] = useState(false);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { updateService } from '../services/updates/updateService';
+export { UpdateStatus } from '../services/updates/updateTypes';
 
 /**
  * React hook to bind components to the central updateService

@@ -11,6 +11,9 @@ export function Toggle({ enabled, onChange, label, description, disabled = false
       )}
       <button
         type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label={label || description || 'Toggle switch'}
         disabled={disabled}
         onClick={() => onChange(!enabled)}
         className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${

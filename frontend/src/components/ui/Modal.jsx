@@ -10,7 +10,9 @@ export function Modal({ isOpen, onClose, title, children, footer }) {
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4 shrink-0">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</h3>
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close modal dialog"
               className="text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-surface-800 transition text-xs"
             >
               ✕

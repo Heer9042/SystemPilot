@@ -277,9 +277,18 @@ pub fn execute_cleanup(
 
         #[cfg(target_os = "windows")]
         {
-            use windows_sys::Win32::UI::Shell::{
-                SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPROGRESSUI, SHERB_NOSOUND,
-            };
+            #[link(name = "shell32")]
+            extern "system" {
+                fn SHEmptyRecycleBinW(
+                    hwnd: *mut std::ffi::c_void,
+                    psz_root_path: *const u16,
+                    dw_flags: u32,
+                ) -> i32;
+            }
+            const SHERB_NOCONFIRMATION: u32 = 0x00000001;
+            const SHERB_NOPROGRESSUI: u32 = 0x00000002;
+            const SHERB_NOSOUND: u32 = 0x00000004;
+
             unsafe {
                 let _ = SHEmptyRecycleBinW(
                     std::ptr::null_mut(),

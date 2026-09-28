@@ -172,10 +172,9 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
                 ].map((m) => {
                   const isSelected = config.monitoringMode === m.id;
                   return (
-                    <div
+                    <label
                       key={m.id}
-                      onClick={() => setConfig({ ...config, monitoringMode: m.id })}
-                      className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                      className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition-colors ${
                         isSelected
                           ? 'bg-brand-50 border-brand-500 dark:bg-brand-600/15 dark:border-brand-500'
                           : 'bg-slate-50 border-slate-200 hover:border-slate-300 dark:bg-surface-900 dark:border-slate-800 dark:hover:border-slate-700'
@@ -190,11 +189,12 @@ export function FirstRunWizard({ onComplete, currentTheme, toggleTheme }) {
                       </div>
                       <input
                         type="radio"
+                        name="monitoringMode"
                         checked={isSelected}
-                        onChange={() => {}}
+                        onChange={() => setConfig((prev) => ({ ...prev, monitoringMode: m.id }))}
                         className="text-brand-600 focus:ring-0 cursor-pointer"
                       />
-                    </div>
+                    </label>
                   );
                 })}
               </div>

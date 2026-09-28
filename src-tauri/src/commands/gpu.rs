@@ -1,5 +1,4 @@
-use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
+﻿use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GpuInfo {
@@ -14,19 +13,8 @@ pub struct GpuInfo {
     pub is_primary: bool,
 }
 
-static GPU_CACHE: Mutex<Option<Vec<GpuInfo>>> = Mutex::new(None);
-
 #[tauri::command]
 pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
-    // Check cache first for fast 0ms return
-    if let Ok(guard) = GPU_CACHE.lock() {
-        if let Some(ref cached) = *guard {
-            if !cached.is_empty() {
-                return Ok(cached.clone());
-            }
-        }
-    }
-
     let mut gpus = Vec::new();
 
     #[cfg(target_os = "windows")]
@@ -56,7 +44,7 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
                 let driver = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "DriverVersion")
                     .unwrap_or_else(|| "WDDM Standard".into());
 
-                let ram = get_reg_qword(
+                let dedicated_ram = get_reg_qword(
                     HKEY_LOCAL_MACHINE,
                     &adapter_key,
                     "HardwareInformation.qwMemorySize",
@@ -68,6 +56,13 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
                         "HardwareInformation.MemorySize",
                     )
                 })
+                .unwrap_or(0);
+
+                let shared_ram = get_reg_qword(
+                    HKEY_LOCAL_MACHINE,
+                    &adapter_key,
+                    "HardwareInformation.SharedSystemMemory",
+                )
                 .unwrap_or(0);
 
                 let provider = get_reg_string(HKEY_LOCAL_MACHINE, &adapter_key, "ProviderName")
@@ -86,7 +81,7 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
                 } else if lower_name.contains("intel") || lower_prov.contains("intel") {
                     "Intel".into()
                 } else {
-                    "DirectX Adapter".into()
+                    "Display Adapter".into()
                 };
 
                 let is_primary = gpus.is_empty();
@@ -95,8 +90,10 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
                     name,
                     vendor,
                     driver_version: driver,
-                    dedicated_memory_bytes: ram,
-                    shared_memory_bytes: 0,
+                    dedicated_memory_bytes: dedicated_ram,
+                    shared_memory_bytes: shared_ram,
+                    // Utilization and temperature require vendor SDK (NVML/ADL/IGCL)
+                    // which are not available via standard Windows registry.
                     utilization_percent: None,
                     memory_utilization_percent: None,
                     temperature_celsius: None,
@@ -106,24 +103,6 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
         }
     }
 
-    if gpus.is_empty() {
-        gpus.push(GpuInfo {
-            name: "DirectX Graphics Adapter".into(),
-            vendor: "Standard".into(),
-            driver_version: "WDDM 3.0".into(),
-            dedicated_memory_bytes: 0,
-            shared_memory_bytes: 0,
-            utilization_percent: None,
-            memory_utilization_percent: None,
-            temperature_celsius: None,
-            is_primary: true,
-        });
-    }
-
-    // Store in cache
-    if let Ok(mut guard) = GPU_CACHE.lock() {
-        *guard = Some(gpus.clone());
-    }
-
+    // Empty list means no GPU detected — frontend shows informative unavailable state
     Ok(gpus)
 }

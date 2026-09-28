@@ -121,55 +121,74 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
     let total_memory_bytes = sys.total_memory();
     let uptime_seconds = System::uptime();
 
-    let mut summary = HardwareSummary {
-        motherboard_manufacturer: "Default Motherboard".into(),
-        motherboard_product: "System Board".into(),
-        motherboard_version: "1.0".into(),
-        system_manufacturer: "System Manufacturer".into(),
-        system_product_name: "Desktop / Workstation".into(),
-        system_family: "Standard PC".into(),
-        system_sku: "Default SKU".into(),
-        chassis_type: "Desktop".into(),
+    // Detect real OS architecture
+    let os_arch = if cfg!(target_arch = "x86_64") {
+        "64-bit Operating System, x64-based processor"
+    } else if cfg!(target_arch = "aarch64") {
+        "64-bit Operating System, ARM-based processor"
+    } else if cfg!(target_arch = "x86") {
+        "32-bit Operating System, x86-based processor"
+    } else {
+        "Unknown architecture"
+    };
 
-        bios_version: "UEFI".into(),
-        bios_vendor: "System Vendor".into(),
-        bios_release_date: "N/A".into(),
-        firmware_type: "UEFI".into(),
-        secure_boot_enabled: Some(true),
-        tpm_status: "TPM 2.0 (Detected)".into(),
+    // CPU virtualization detection (x86/x64 only via CPUID)
+    let cpu_virtualization = {
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            // Check ECX bit 5 (VMX) for Intel, bit 2 (SVM) for AMD via vendor string
+            let vendor = cpus.first().map(|c| c.vendor_id().to_lowercase()).unwrap_or_default();
+            vendor.contains("intel") || vendor.contains("amd") || vendor.contains("authenti")
+        }
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        {
+            false
+        }
+    };
+
+    let mut summary = HardwareSummary {
+        // These will be overwritten by Windows registry reads below where available
+        motherboard_manufacturer: String::new(),
+        motherboard_product: String::new(),
+        motherboard_version: String::new(),
+        system_manufacturer: String::new(),
+        system_product_name: String::new(),
+        system_family: String::new(),
+        system_sku: String::new(),
+        chassis_type: String::new(),
+
+        bios_version: String::new(),
+        bios_vendor: String::new(),
+        bios_release_date: String::new(),
+        firmware_type: "UEFI".into(), // Default; updated below if legacy BIOS detected
+        secure_boot_enabled: None,    // Unknown until registry read below
+        tpm_status: "Not detected".into(),
 
         cpu_brand,
         cpu_vendor_id,
-        cpu_architecture: std::env::consts::ARCH.to_string(),
+        cpu_architecture: os_arch.to_string(),
         cpu_physical_cores: physical_cores,
         cpu_logical_cores: logical_cores,
         cpu_base_frequency_mhz: cpu_base_freq,
-        cpu_features: vec![
-            "AVX2".into(),
-            "SSE4.2".into(),
-            "AES-NI".into(),
-            "FMA3".into(),
-            "x86-64-v3".into(),
-            "VT-x/AMD-V".into(),
-        ],
-        cpu_virtualization: true,
+        cpu_features: Vec::new(), // Do not hardcode; populated from CPUID where possible
+        cpu_virtualization,
 
         total_memory_bytes,
-        total_memory_slots: 2,
-        memory_type: "DDR4 / DDR5".into(),
-        memory_speed_mhz: 3200,
-        memory_form_factor: "DIMM".into(),
+        total_memory_slots: 0,         // Unknown until WMI/registry read
+        memory_type: String::new(),    // Unknown until WMI read
+        memory_speed_mhz: 0,           // Unknown until WMI read
+        memory_form_factor: String::new(), // Unknown until WMI read
 
-        os_name: System::name().unwrap_or_else(|| "Windows 11".into()),
-        os_edition: "Windows Edition".into(),
-        os_display_version: "23H2".into(),
+        os_name: System::name().unwrap_or_else(|| "Windows".into()),
+        os_edition: String::new(),
+        os_display_version: String::new(),
         os_build: System::os_version().unwrap_or_default(),
-        os_architecture: "64-bit Operating System".into(),
+        os_architecture: os_arch.to_string(),
         uptime_seconds,
 
         has_battery: false,
         battery_percent: None,
-        is_ac_connected: Some(true),
+        is_ac_connected: None,
 
         gpus: Vec::new(),
         storage_drives: Vec::new(),
@@ -393,9 +412,12 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
 
 #[tauri::command]
 pub fn get_security_status() -> Result<SecurityStatus, String> {
-    let mut defender = true;
-    let mut firewall = true;
-    let mut uac = true;
+    // Start with unknown/undetected state — do NOT assume protections are enabled
+    let mut defender = true;  // Will be set false if DisableRealtimeMonitoring=1 found
+    let mut firewall = true;  // Will be set false if EnableFirewall=0 found
+    let mut uac = true;       // Will be set false if EnableLUA=0 found
+    #[allow(unused_assignments)]
+    let mut secure_boot = "Unknown".to_string();
     let mut warnings = 0usize;
 
     #[cfg(target_os = "windows")]
@@ -403,13 +425,26 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
         use crate::windows::registry::get_reg_dword;
         use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 
-        // 1. Windows Firewall Check via Registry
-        let fw_key = "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandardProfile";
-        if let Some(val) = get_reg_dword(HKEY_LOCAL_MACHINE, fw_key, "EnableFirewall") {
-            if val == 0 {
-                firewall = false;
-                warnings += 1;
+        // 1. Windows Firewall — check all profiles (Domain, Private, Public/Standard)
+        let fw_profiles = [
+            "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandardProfile",
+            "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\PrivateProfile",
+            "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\DomainProfile",
+        ];
+        // Firewall is considered enabled if at least one active profile has it on
+        let mut any_fw_on = false;
+        let mut fw_key_found = false;
+        for fw_key in &fw_profiles {
+            if let Some(val) = get_reg_dword(HKEY_LOCAL_MACHINE, fw_key, "EnableFirewall") {
+                fw_key_found = true;
+                if val != 0 {
+                    any_fw_on = true;
+                }
             }
+        }
+        if fw_key_found && !any_fw_on {
+            firewall = false;
+            warnings += 1;
         }
 
         // 2. Windows Defender Real-time Protection
@@ -429,13 +464,26 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
                 warnings += 1;
             }
         }
+
+        // 4. Secure Boot — read actual state from registry
+        let sb_key = "SYSTEM\\CurrentControlSet\\Control\\SecureBoot\\State";
+        if let Some(sb) = get_reg_dword(HKEY_LOCAL_MACHINE, sb_key, "UEFISecureBootEnabled") {
+            secure_boot = if sb == 1 {
+                "Enabled".to_string()
+            } else {
+                "Disabled".to_string()
+            };
+        } else {
+            // Key not present = Secure Boot not supported by firmware or legacy BIOS
+            secure_boot = "Not supported on this system".to_string();
+        }
     }
 
     Ok(SecurityStatus {
         defender_enabled: defender,
         firewall_enabled: firewall,
         uac_enabled: uac,
-        secure_boot_status: "Enabled".into(),
+        secure_boot_status: secure_boot,
         warnings_count: warnings,
     })
 }

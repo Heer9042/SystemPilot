@@ -27,13 +27,13 @@ export function UpdateBanner({ latestVersion, onOpenModal, onUpdateNow, onDismis
       <div className="flex items-center gap-2">
         <button
           onClick={onOpenModal}
-          className="text-white/90 hover:text-white underline underline-offset-2 hover:opacity-90 font-medium px-2 py-1 transition-all"
+          className="text-white/90 hover:text-white underline underline-offset-2 hover:opacity-90 font-medium px-2 py-1 transition-opacity"
         >
           View Details
         </button>
         <button
           onClick={onUpdateNow}
-          className="bg-white text-brand-700 hover:bg-slate-100 font-bold px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5 transition-all text-xs"
+          className="bg-white text-brand-700 hover:bg-slate-100 font-bold px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors text-xs"
         >
           <Download className="w-3.5 h-3.5" /> Update Now
         </button>
@@ -41,6 +41,7 @@ export function UpdateBanner({ latestVersion, onOpenModal, onUpdateNow, onDismis
           onClick={onDismiss}
           className="p-1 text-white/70 hover:text-white rounded-md hover:bg-white/10 transition-colors"
           title="Dismiss for now"
+          aria-label="Dismiss for now"
         >
           <X className="w-4 h-4" />
         </button>
