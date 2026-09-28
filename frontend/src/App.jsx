@@ -33,7 +33,7 @@ const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m
 
 export function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { stats, history, loading, error } = useSystemStats(1000);
+  const { stats, history, loading, error } = useSystemStats(2000);
   const { theme, toggleTheme } = useTheme();
   const [toast, setToast] = useState(null);
   const [showFirstRun, setShowFirstRun] = useState(false);

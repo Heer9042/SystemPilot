@@ -37,6 +37,7 @@ windows-sys = { version = "0.59", features = [
     "Win32_Security",
 ] }
 parking_lot = "0.12"
+sha2 = "0.10"
 
 # BUILD SCRIPT CRASH FIX (MinGW/GNU toolchain):
 # Without this, tauri v2.11.6's build script crashes with STATUS_ACCESS_VIOLATION

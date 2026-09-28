@@ -1,4 +1,4 @@
-name: SystemPilot Release
+﻿name: SystemPilot Release
 
 on:
   push:
@@ -136,6 +136,26 @@ jobs:
           Remove-Item -Path $pfxPath -Force -ErrorAction SilentlyContinue
           Write-Host "Authenticode code signing completed successfully."
 
+      - name: Verify Authenticode Signatures
+        if: env.WINDOWS_CERTIFICATE_BASE64 != ''
+        env:
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+        shell: powershell
+        run: |
+          $failed = $false
+          $artifacts = Get-ChildItem -Path "release-artifacts/*.exe", "release-artifacts/*.msi" -ErrorAction SilentlyContinue
+          foreach ($file in $artifacts) {
+            $sig = Get-AuthenticodeSignature -FilePath $file.FullName
+            if ($sig.Status -ne "Valid") {
+              Write-Error "[FAIL] Signature INVALID on $($file.Name): $($sig.Status)"  
+              $failed = $true
+            } else {
+              Write-Host "[OK] $($file.Name): $($sig.SignerCertificate.Subject)"  
+            }
+          }
+          if ($failed) { Write-Error "Release aborted: signature verification failed."; exit 1 }
+          Write-Host "All release artifacts verified successfully."
+
       - name: Generate Cryptographic SHA-256 Checksums
         shell: powershell
         run: |
@@ -161,3 +181,4 @@ jobs:
             release-artifacts/*.msi
             release-artifacts/*.zip
             release-artifacts/SHA256SUMS.txt
+

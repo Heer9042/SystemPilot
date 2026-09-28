@@ -48,7 +48,7 @@ struct ProcessRawSnapshot {
 }
 
 #[tauri::command]
-pub fn get_processes(
+pub async fn get_processes(
     state: tauri::State<'_, super::system::SystemState>,
 ) -> Result<Vec<ProcessInfo>, String> {
     // 1. Acquire mutex ONLY for rapid snapshot collection, then drop lock immediately
@@ -92,36 +92,43 @@ pub fn get_processes(
             });
         }
         list
-    }; // Mutex lock is DROPPED here immediately! SystemState is free for other operations.
+    }; // Mutex lock is DROPPED here immediately. SystemState is free for other IPC calls.
 
-    // 2. Build final process list without holding global lock
-    let mut procs = Vec::with_capacity(raw_list.len());
+    // 2. Build final process list (priority queries via Win32 OpenProcess) off-thread.
+    //    spawn_blocking prevents Win32 calls from blocking the Tauri async executor.
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let mut procs = Vec::with_capacity(raw_list.len());
 
-    for item in raw_list {
-        let priority = if item.is_critical {
-            "Normal".to_string()
-        } else {
-            get_process_priority(item.pid)
-        };
+        for item in raw_list {
+            let priority = if item.is_critical {
+                "Normal".to_string()
+            } else {
+                get_process_priority(item.pid)
+            };
 
-        procs.push(ProcessInfo {
-            pid: item.pid,
-            parent_pid: item.parent_pid,
-            name: item.name,
-            exe_path: item.exe_path,
-            cpu_usage: item.cpu_usage,
-            memory_bytes: item.memory_bytes,
-            virtual_memory_bytes: item.virtual_memory_bytes,
-            disk_read_bytes: item.disk_read_bytes,
-            disk_written_bytes: item.disk_written_bytes,
-            status: item.status,
-            start_time: item.start_time,
-            priority,
-            is_critical: item.is_critical,
-        });
-    }
+            procs.push(ProcessInfo {
+                pid: item.pid,
+                parent_pid: item.parent_pid,
+                name: item.name,
+                exe_path: item.exe_path,
+                cpu_usage: item.cpu_usage,
+                memory_bytes: item.memory_bytes,
+                virtual_memory_bytes: item.virtual_memory_bytes,
+                disk_read_bytes: item.disk_read_bytes,
+                disk_written_bytes: item.disk_written_bytes,
+                status: item.status,
+                start_time: item.start_time,
+                priority,
+                is_critical: item.is_critical,
+            });
+        }
 
-    Ok(procs)
+        procs
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(result)
 }
 
 fn get_process_priority(pid: u32) -> String {

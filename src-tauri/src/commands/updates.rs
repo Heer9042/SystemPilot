@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+﻿use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Emitter};
@@ -125,61 +125,30 @@ pub fn open_release_notes(url: Option<String>) -> Result<(), String> {
     }
 }
 
-/// Computes the SHA-256 hash of a file using Windows CertUtil/PowerShell
+/// Computes the SHA-256 hash of a file using native Rust (no subprocess spawning).
+/// This avoids spawning certutil/powershell which can trigger AV false positives.
 fn compute_file_sha256(path: &Path) -> Result<String, String> {
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
 
-        let output = std::process::Command::new("certutil")
-            .arg("-hashfile")
-            .arg(path.to_str().ok_or("The file could not be processed.")?)
-            .arg("SHA256")
-            .creation_flags(CREATE_NO_WINDOW)
-            .output()
+    let mut file = fs::File::open(path)
+        .map_err(|_| "The update verification could not be completed.".to_string())?;
+
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 65536]; // 64 KiB read buffer
+
+    loop {
+        let n = file
+            .read(&mut buffer)
             .map_err(|_| "The update verification could not be completed.".to_string())?;
-
-        if !output.status.success() {
-            return Err("The update verification could not be completed.".to_string());
+        if n == 0 {
+            break;
         }
-
-        let text = String::from_utf8_lossy(&output.stdout);
-        let lines: Vec<&str> = text.lines().map(|l| l.trim()).collect();
-        if lines.len() >= 2 {
-            let hash = lines[1].replace([' ', '\r', '\n'], "").to_lowercase();
-            if hash.len() == 64 {
-                return Ok(hash);
-            }
-        }
-
-        // Fallback to PowerShell Get-FileHash if CertUtil format differed
-        let ps_cmd = format!(
-            "(Get-FileHash -Path '{}' -Algorithm SHA256).Hash",
-            path.display()
-        );
-        let ps_output = std::process::Command::new("powershell")
-            .args(["-NoProfile", "-NonInteractive", "-Command", &ps_cmd])
-            .creation_flags(CREATE_NO_WINDOW)
-            .output()
-            .map_err(|_| "The update verification could not be completed.".to_string())?;
-
-        if ps_output.status.success() {
-            let hash = String::from_utf8_lossy(&ps_output.stdout)
-                .trim()
-                .to_lowercase();
-            if hash.len() == 64 {
-                return Ok(hash);
-            }
-        }
-
-        Err("The update verification could not be completed.".to_string())
+        hasher.update(&buffer[..n]);
     }
 
-    #[cfg(not(target_os = "windows"))]
-    {
-        Err("The requested operation could not be completed.".to_string())
-    }
+    let hash = hasher.finalize();
+    Ok(format!("{:x}", hash))
 }
 
 /// Download and cryptographically verify an official release binary
@@ -392,3 +361,4 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
         Err("The requested operation is supported on Windows.".to_string())
     }
 }
+
