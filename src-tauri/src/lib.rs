@@ -43,18 +43,27 @@ pub fn run() {
             commands::processes::suspend_process,
             commands::processes::resume_process,
             // CPU & GPU
+            commands::cpu::get_cpu_snapshot,
             commands::cpu::get_cpu_detailed_info,
+            commands::gpu::get_gpu_system_snapshot,
             commands::gpu::get_gpu_info,
             // Disk & Network
             commands::disk_net::get_disk_details,
+            commands::disk_net::get_disk_system_snapshot,
             commands::disk_net::get_network_details,
-            // Power
+            commands::disk_net::get_network_system_snapshot,
+            commands::disk_net::run_network_ping_test,
+            // Performance & Power
+            commands::performance::get_performance_snapshot,
             commands::power::get_power_plans,
             commands::power::set_power_plan,
             // Startup & Cleanup
             commands::startup::get_startup_items,
             commands::startup::toggle_startup_item,
+            commands::startup::get_startup_change_history,
+            commands::startup::restore_startup_item,
             commands::cleanup::scan_cleanable_items,
+            commands::cleanup::scan_large_files,
             commands::cleanup::execute_cleanup,
             commands::cleanup::get_cleanup_history,
             // Hardware & Security
@@ -64,6 +73,8 @@ pub fn run() {
             commands::benchmark::run_cpu_benchmark,
             commands::benchmark::run_memory_benchmark,
             commands::benchmark::run_disk_benchmark,
+            commands::benchmark::run_gpu_benchmark,
+            commands::benchmark::run_combined_benchmark,
             commands::benchmark::start_cpu_stress,
             commands::benchmark::stop_cpu_stress,
             commands::benchmark::get_benchmark_history,

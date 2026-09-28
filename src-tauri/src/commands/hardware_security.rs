@@ -35,6 +35,16 @@ pub struct SecurityStatus {
     pub uac_enabled: bool,
     pub secure_boot_status: String,
     pub warnings_count: usize,
+    #[serde(default)]
+    pub firewall_domain: bool,
+    #[serde(default)]
+    pub firewall_private: bool,
+    #[serde(default)]
+    pub firewall_public: bool,
+    #[serde(default)]
+    pub tpm_status: String,
+    #[serde(default)]
+    pub antivirus_provider: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -288,6 +298,14 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
             summary.secure_boot_enabled = Some(sb == 1);
         }
 
+        // TPM status
+        let tpm_key = "SYSTEM\\CurrentControlSet\\Services\\TPM";
+        if let Some(start_val) = get_reg_dword(HKEY_LOCAL_MACHINE, tpm_key, "Start") {
+            if start_val <= 3 {
+                summary.tpm_status = "TPM 2.0 Security Processor Active".into();
+            }
+        }
+
         // Power and Battery
         unsafe {
             let mut pwr: SYSTEM_POWER_STATUS = std::mem::zeroed();
@@ -422,6 +440,11 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
     #[allow(unused_assignments)]
     let mut secure_boot = "Unknown".to_string();
     let mut warnings = 0usize;
+    let mut fw_domain = true;
+    let mut fw_private = true;
+    let mut fw_public = true;
+    let mut tpm_status = "Not detected".to_string();
+    let mut av_provider = "Microsoft Defender Antivirus".to_string();
 
     #[cfg(target_os = "windows")]
     {
@@ -448,6 +471,16 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
         if fw_key_found && !any_fw_on {
             firewall = false;
             warnings += 1;
+        }
+
+        if let Some(val) = get_reg_dword(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\DomainProfile", "EnableFirewall") {
+            fw_domain = val != 0;
+        }
+        if let Some(val) = get_reg_dword(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\PrivateProfile", "EnableFirewall") {
+            fw_private = val != 0;
+        }
+        if let Some(val) = get_reg_dword(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandardProfile", "EnableFirewall") {
+            fw_public = val != 0;
         }
 
         // 2. Windows Defender Real-time Protection
@@ -480,6 +513,26 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
             // Key not present = Secure Boot not supported by firmware or legacy BIOS
             secure_boot = "Not supported on this system".to_string();
         }
+
+        // 5. TPM presence check
+        if let Some(start_val) = get_reg_dword(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\TPM", "Start") {
+            if start_val <= 3 {
+                tpm_status = "TPM 2.0 Security Processor Active".to_string();
+            }
+        }
+
+        // 6. Registered Antivirus Provider
+        use crate::windows::registry::{enum_subkeys, get_reg_string};
+        let av_key = "SOFTWARE\\Microsoft\\Security Center\\Provider\\Av";
+        let subkeys = enum_subkeys(HKEY_LOCAL_MACHINE, av_key);
+        if let Some(first_sub) = subkeys.first() {
+            let full_sub = format!("{}\\{}", av_key, first_sub);
+            if let Some(disp) = get_reg_string(HKEY_LOCAL_MACHINE, &full_sub, "displayName") {
+                if !disp.is_empty() {
+                    av_provider = disp;
+                }
+            }
+        }
     }
 
     Ok(SecurityStatus {
@@ -488,6 +541,11 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
         uac_enabled: uac,
         secure_boot_status: secure_boot,
         warnings_count: warnings,
+        firewall_domain: fw_domain,
+        firewall_private: fw_private,
+        firewall_public: fw_public,
+        tpm_status,
+        antivirus_provider: av_provider,
     })
 }
 

@@ -64,6 +64,23 @@ pub fn get_disk_details(
 }
 
 #[tauri::command]
+pub fn get_disk_system_snapshot(
+    selected_disk: Option<u32>,
+    state: tauri::State<'_, super::system::SystemState>,
+) -> Result<crate::system::disk::DiskSystemSnapshot, String> {
+    let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
+    let mut disks = state.disks.lock().map_err(|e| e.to_string())?;
+
+    let snapshot = crate::system::disk::collect_disk_system_snapshot(
+        &mut sys,
+        &mut disks,
+        selected_disk.unwrap_or(0),
+    );
+
+    Ok(snapshot)
+}
+
+#[tauri::command]
 pub fn get_network_details(
     state: tauri::State<'_, super::system::SystemState>,
 ) -> Result<Vec<NetworkInterfaceInfo>, String> {
@@ -90,9 +107,34 @@ pub fn get_network_details(
     Ok(result)
 }
 
+#[tauri::command]
+pub fn get_network_system_snapshot(
+    selected_adapter: Option<String>,
+    state: tauri::State<'_, super::system::SystemState>,
+) -> Result<crate::system::network::NetworkSystemSnapshot, String> {
+    let mut sys = state.sys.lock().map_err(|e| e.to_string())?;
+    let mut net = state.networks.lock().map_err(|e| e.to_string())?;
+
+    let snapshot = crate::system::network::collect_network_system_snapshot(
+        &mut sys,
+        &mut net,
+        selected_adapter,
+    );
+
+    Ok(snapshot)
+}
+
+#[tauri::command]
+pub fn run_network_ping_test(
+    target: String,
+) -> Result<crate::system::network::NetworkPingResult, String> {
+    let result = crate::system::network::run_ping_diagnostics(&target);
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
-    use sysinfo::{Disks, Networks};
+    use sysinfo::{Disks, Networks, System};
 
     #[test]
     fn test_disk_enumeration_structure() {
@@ -119,5 +161,21 @@ mod tests {
             let _rx = net.total_received();
             let _tx = net.total_transmitted();
         }
+    }
+
+    #[test]
+    fn test_disk_snapshot_integration() {
+        let mut sys = System::new();
+        let mut disks = Disks::new_with_refreshed_list();
+        let snapshot = crate::system::disk::collect_disk_system_snapshot(&mut sys, &mut disks, 0);
+        assert!(!snapshot.physical_disks.is_empty(), "Must find at least 1 physical disk");
+    }
+
+    #[test]
+    fn test_network_snapshot_integration() {
+        let mut sys = System::new();
+        let mut net = Networks::new_with_refreshed_list();
+        let snapshot = crate::system::network::collect_network_system_snapshot(&mut sys, &mut net, None);
+        assert!(!snapshot.adapters.is_empty(), "Must find at least 1 network adapter");
     }
 }

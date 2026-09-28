@@ -5,6 +5,7 @@ pub mod disk_net;
 pub mod gpu;
 pub mod hardware_security;
 pub mod memory;
+pub mod performance;
 pub mod power;
 pub mod processes;
 pub mod startup;

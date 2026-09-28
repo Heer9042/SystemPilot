@@ -5,32 +5,29 @@ export function GaugeMeter({ value = 0, max = 100, label, sublabel, icon: Icon, 
   const percent = Math.min(100, Math.max(0, (value / max) * 100));
   const radius = 38;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percent / 100) * (circumference * 0.75); // 270 degree gauge
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
     <div className="flex flex-col items-center justify-center p-3 relative">
       <div className="relative w-28 h-28 flex items-center justify-center">
-        <svg className="w-full h-full transform -rotate-225" viewBox="0 0 96 96">
-          {/* Background Track */}
+        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
+          {/* Full 360° Background Track */}
           <circle
             cx="48"
             cy="48"
             r={radius}
             stroke="currentColor"
-            strokeWidth="8"
-            className="text-slate-200 dark:text-surface-800/80"
+            strokeWidth="7"
+            className="text-slate-200 dark:text-surface-800/90"
             fill="transparent"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference * 0.25}
-            strokeLinecap="round"
           />
-          {/* Progress Arc */}
+          {/* Full 360° Circular Progress Ring */}
           <circle
             cx="48"
             cy="48"
             r={radius}
             stroke="currentColor"
-            strokeWidth="8"
+            strokeWidth="7"
             className={`transition-all duration-500 ease-out ${getStatusColor(percent)}`}
             fill="transparent"
             strokeDasharray={circumference}

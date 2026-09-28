@@ -90,9 +90,21 @@ export const api = {
     throw new Error('System service is temporarily unavailable');
   },
 
+  async getCpuSnapshot() {
+    const inv = await getInvoke();
+    if (inv) return await inv('get_cpu_snapshot');
+    return null;
+  },
+
   async getCpuDetailedInfo() {
     const inv = await getInvoke();
     if (inv) return await inv('get_cpu_detailed_info');
+    return null;
+  },
+
+  async getGpuSystemSnapshot(selectedIndex = 0) {
+    const inv = await getInvoke();
+    if (inv) return await inv('get_gpu_system_snapshot', { selectedIndex });
     return null;
   },
 
@@ -108,10 +120,34 @@ export const api = {
     return [];
   },
 
+  async getDiskSystemSnapshot(selectedDisk = 0) {
+    const inv = await getInvoke();
+    if (inv) return await inv('get_disk_system_snapshot', { selectedDisk });
+    return null;
+  },
+
   async getNetworkDetails() {
     const inv = await getInvoke();
     if (inv) return await inv('get_network_details');
     return [];
+  },
+
+  async getNetworkSystemSnapshot(selectedAdapter = null) {
+    const inv = await getInvoke();
+    if (inv) return await inv('get_network_system_snapshot', { selectedAdapter });
+    return null;
+  },
+
+  async runNetworkPingTest(target) {
+    const inv = await getInvoke();
+    if (inv) return await inv('run_network_ping_test', { target });
+    throw new Error('Native networking service unavailable');
+  },
+
+  async getPerformanceSnapshot() {
+    const inv = await getInvoke();
+    if (inv) return await inv('get_performance_snapshot');
+    return null;
   },
 
   async getPowerPlans() {
@@ -132,6 +168,18 @@ export const api = {
     return [];
   },
 
+  async getStartupChangeHistory() {
+    const inv = await getInvoke();
+    if (inv) return await inv('get_startup_change_history');
+    return [];
+  },
+
+  async restoreStartupItem(itemId) {
+    const inv = await getInvoke();
+    if (inv) return await inv('restore_startup_item', { itemId });
+    throw new Error('System service is temporarily unavailable');
+  },
+
   async toggleStartupItem(itemId, enable) {
     const inv = await getInvoke();
     if (inv) return await inv('toggle_startup_item', { itemId, enable });
@@ -142,6 +190,12 @@ export const api = {
     const inv = await getInvoke();
     if (inv) return await inv('scan_cleanable_items');
     return { categories: [], total_bytes: 0, total_files: 0 };
+  },
+
+  async scanLargeFiles() {
+    const inv = await getInvoke();
+    if (inv) return await inv('scan_large_files');
+    return [];
   },
 
   async executeCleanup(categoryIds, emptyRecycleBin = false) {
@@ -197,6 +251,18 @@ export const api = {
   async runDiskBenchmark() {
     const inv = await getInvoke();
     if (inv) return await inv('run_disk_benchmark');
+    throw new Error('System service is temporarily unavailable');
+  },
+
+  async runGpuBenchmark() {
+    const inv = await getInvoke();
+    if (inv) return await inv('run_gpu_benchmark');
+    throw new Error('System service is temporarily unavailable');
+  },
+
+  async runCombinedBenchmark() {
+    const inv = await getInvoke();
+    if (inv) return await inv('run_combined_benchmark');
     throw new Error('System service is temporarily unavailable');
   },
 
