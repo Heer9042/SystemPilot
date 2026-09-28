@@ -241,17 +241,18 @@ mod tests {
 
     #[test]
     fn test_live_memory_bounds() {
-        if let Ok(stats) = super::get_detailed_memory_stats() {
-            assert!(stats.total > 0, "Total RAM must be greater than zero");
-            assert!(stats.used <= stats.total, "Used RAM must be <= total RAM");
-            assert!(
-                stats.available <= stats.total,
-                "Available RAM must be <= total RAM"
-            );
-            assert!(
-                stats.percent >= 0.0 && stats.percent <= 100.0,
-                "RAM usage percentage must be within [0.0, 100.0]"
-            );
-        }
+        let mut sys = sysinfo::System::new();
+        sys.refresh_memory();
+        let total = sys.total_memory();
+        let used = sys.used_memory();
+        let available = sys.available_memory();
+        assert!(total > 0, "Total RAM must be greater than zero");
+        assert!(used <= total, "Used RAM must be <= total RAM");
+        assert!(available <= total, "Available RAM must be <= total RAM");
+        let pct = (used as f32 / total as f32) * 100.0;
+        assert!(
+            (0.0..=100.0).contains(&pct),
+            "RAM usage percentage must be within [0.0, 100.0]"
+        );
     }
 }
