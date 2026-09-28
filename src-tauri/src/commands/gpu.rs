@@ -1,4 +1,4 @@
-﻿use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GpuInfo {
@@ -105,4 +105,25 @@ pub fn get_gpu_info() -> Result<Vec<GpuInfo>, String> {
 
     // Empty list means no GPU detected — frontend shows informative unavailable state
     Ok(gpus)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gpu_info_does_not_panic() {
+        let result = get_gpu_info();
+        assert!(
+            result.is_ok(),
+            "get_gpu_info must return Ok on any environment (including headless CI)"
+        );
+        let gpus = result.unwrap();
+        for gpu in gpus {
+            assert!(
+                !gpu.name.is_empty(),
+                "Detected GPU must have a non-empty name"
+            );
+        }
+    }
 }

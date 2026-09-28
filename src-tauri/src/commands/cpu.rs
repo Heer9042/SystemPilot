@@ -49,3 +49,26 @@ pub fn get_cpu_detailed_info(
         package_power_watts: None,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use sysinfo::System;
+
+    #[test]
+    fn test_cpu_discovery_and_topology() {
+        let mut sys = System::new();
+        sys.refresh_cpu_all();
+        let cpus = sys.cpus();
+        assert!(
+            !cpus.is_empty(),
+            "System must report at least 1 logical CPU core"
+        );
+        let logical_cores = cpus.len();
+        assert!(logical_cores > 0, "Logical core count must be positive");
+        let usage = sys.global_cpu_usage();
+        assert!(
+            (0.0..=100.0).contains(&usage),
+            "CPU global usage must be in [0.0, 100.0]"
+        );
+    }
+}

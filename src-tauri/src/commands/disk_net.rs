@@ -89,3 +89,35 @@ pub fn get_network_details(
 
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use sysinfo::{Disks, Networks};
+
+    #[test]
+    fn test_disk_enumeration_structure() {
+        let disks = Disks::new_with_refreshed_list();
+        for disk in disks.iter() {
+            let total = disk.total_space();
+            let avail = disk.available_space();
+            assert!(
+                avail <= total,
+                "Available disk space cannot exceed total space"
+            );
+            assert!(
+                !disk.mount_point().to_string_lossy().is_empty(),
+                "Mount point cannot be empty"
+            );
+        }
+    }
+
+    #[test]
+    fn test_network_enumeration_structure() {
+        let networks = Networks::new_with_refreshed_list();
+        for (name, net) in networks.iter() {
+            assert!(!name.is_empty(), "Network adapter name must not be empty");
+            let _rx = net.total_received();
+            let _tx = net.total_transmitted();
+        }
+    }
+}

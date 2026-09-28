@@ -363,7 +363,14 @@ pub fn install_update_and_restart(app: AppHandle, installer_path: String) -> Res
         );
 
         let status = std::process::Command::new("powershell")
-            .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &ps_script])
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle",
+                "Hidden",
+                "-Command",
+                &ps_script,
+            ])
             .creation_flags(CREATE_NO_WINDOW)
             .status();
 

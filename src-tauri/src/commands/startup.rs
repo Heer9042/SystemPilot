@@ -1,4 +1,4 @@
-﻿use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StartupItem {
@@ -85,10 +85,8 @@ pub fn get_startup_items() -> Result<Vec<StartupItem>, String> {
                                 .trim_end_matches(".disabled")
                                 .trim_end_matches(".lnk")
                                 .to_string();
-                            let id = format!(
-                                "folder-{}",
-                                display_name.to_lowercase().replace(' ', "-")
-                            );
+                            let id =
+                                format!("folder-{}", display_name.to_lowercase().replace(' ', "-"));
                             items.push(StartupItem {
                                 id,
                                 name: display_name,

@@ -238,4 +238,20 @@ mod tests {
         let released_clamped = ram_before.saturating_sub(ram_after_higher);
         assert_eq!(released_clamped, 0);
     }
+
+    #[test]
+    fn test_live_memory_bounds() {
+        if let Ok(stats) = super::get_detailed_memory_stats() {
+            assert!(stats.total > 0, "Total RAM must be greater than zero");
+            assert!(stats.used <= stats.total, "Used RAM must be <= total RAM");
+            assert!(
+                stats.available <= stats.total,
+                "Available RAM must be <= total RAM"
+            );
+            assert!(
+                stats.percent >= 0.0 && stats.percent <= 100.0,
+                "RAM usage percentage must be within [0.0, 100.0]"
+            );
+        }
+    }
 }

@@ -217,3 +217,19 @@ fn get_battery_info() -> (Option<f32>, Option<bool>) {
     }
     (None, None)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_battery_query_bounds() {
+        let (pct, _charging) = get_battery_info();
+        if let Some(p) = pct {
+            assert!(
+                (0.0..=100.0).contains(&p),
+                "Battery percentage must be in [0.0, 100.0]"
+            );
+        }
+    }
+}

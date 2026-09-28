@@ -7,7 +7,6 @@ fn main() {
     // long path support, and Windows 10/11 OS compatibility declarations.
     let windows = tauri_build::WindowsAttributes::new_without_app_manifest()
         .app_manifest(include_str!("resources/systempilot.exe.manifest"));
-    tauri_build::try_build(
-        tauri_build::Attributes::new().windows_attributes(windows)
-    ).expect("failed to run tauri-build");
+    tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows))
+        .expect("failed to run tauri-build");
 }

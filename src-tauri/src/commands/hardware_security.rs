@@ -137,7 +137,10 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
             // Check ECX bit 5 (VMX) for Intel, bit 2 (SVM) for AMD via vendor string
-            let vendor = cpus.first().map(|c| c.vendor_id().to_lowercase()).unwrap_or_default();
+            let vendor = cpus
+                .first()
+                .map(|c| c.vendor_id().to_lowercase())
+                .unwrap_or_default();
             vendor.contains("intel") || vendor.contains("amd") || vendor.contains("authenti")
         }
         #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
@@ -174,9 +177,9 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
         cpu_virtualization,
 
         total_memory_bytes,
-        total_memory_slots: 0,         // Unknown until WMI/registry read
-        memory_type: String::new(),    // Unknown until WMI read
-        memory_speed_mhz: 0,           // Unknown until WMI read
+        total_memory_slots: 0,             // Unknown until WMI/registry read
+        memory_type: String::new(),        // Unknown until WMI read
+        memory_speed_mhz: 0,               // Unknown until WMI read
         memory_form_factor: String::new(), // Unknown until WMI read
 
         os_name: System::name().unwrap_or_else(|| "Windows".into()),
@@ -413,9 +416,9 @@ pub fn get_hardware_summary() -> Result<HardwareSummary, String> {
 #[tauri::command]
 pub fn get_security_status() -> Result<SecurityStatus, String> {
     // Start with unknown/undetected state — do NOT assume protections are enabled
-    let mut defender = true;  // Will be set false if DisableRealtimeMonitoring=1 found
-    let mut firewall = true;  // Will be set false if EnableFirewall=0 found
-    let mut uac = true;       // Will be set false if EnableLUA=0 found
+    let mut defender = true; // Will be set false if DisableRealtimeMonitoring=1 found
+    let mut firewall = true; // Will be set false if EnableFirewall=0 found
+    let mut uac = true; // Will be set false if EnableLUA=0 found
     #[allow(unused_assignments)]
     let mut secure_boot = "Unknown".to_string();
     let mut warnings = 0usize;
@@ -486,4 +489,20 @@ pub fn get_security_status() -> Result<SecurityStatus, String> {
         secure_boot_status: secure_boot,
         warnings_count: warnings,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_security_status_query() {
+        let res = get_security_status();
+        assert!(res.is_ok(), "get_security_status must succeed");
+        let s = res.unwrap();
+        assert!(
+            !s.secure_boot_status.is_empty(),
+            "Secure boot status string must be non-empty"
+        );
+    }
 }

@@ -11,8 +11,8 @@ use windows_sys::Win32::Foundation::ERROR_SUCCESS;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Registry::{
     RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW,
-    RegQueryValueExW, RegSetValueExW, HKEY, KEY_READ, KEY_WRITE, REG_DWORD,
-    REG_EXPAND_SZ, REG_OPTION_NON_VOLATILE, REG_QWORD, REG_SZ,
+    RegQueryValueExW, RegSetValueExW, HKEY, KEY_READ, KEY_WRITE, REG_DWORD, REG_EXPAND_SZ,
+    REG_OPTION_NON_VOLATILE, REG_QWORD, REG_SZ,
 };
 
 #[cfg(target_os = "windows")]
@@ -225,7 +225,12 @@ pub fn enum_reg_values(root: HKEY, subkey: &str) -> Vec<(String, String)> {
 /// Write a REG_SZ string value to the registry (creates the key if needed).
 /// Only use for HKCU paths which do not require elevation.
 #[cfg(target_os = "windows")]
-pub fn set_reg_string(root: HKEY, subkey: &str, value_name: &str, value: &str) -> Result<(), String> {
+pub fn set_reg_string(
+    root: HKEY,
+    subkey: &str,
+    value_name: &str,
+    value: &str,
+) -> Result<(), String> {
     unsafe {
         let wide_subkey = to_wide_chars(subkey);
         let mut hkey: HKEY = std::ptr::null_mut();
@@ -249,10 +254,8 @@ pub fn set_reg_string(root: HKEY, subkey: &str, value_name: &str, value: &str) -
 
         let wide_val = to_wide_chars(value_name);
         let wide_data: Vec<u16> = value.encode_utf16().chain(std::iter::once(0)).collect();
-        let byte_data: &[u8] = std::slice::from_raw_parts(
-            wide_data.as_ptr() as *const u8,
-            wide_data.len() * 2,
-        );
+        let byte_data: &[u8] =
+            std::slice::from_raw_parts(wide_data.as_ptr() as *const u8, wide_data.len() * 2);
 
         let res2 = RegSetValueExW(
             hkey,
@@ -342,4 +345,18 @@ pub fn enum_subkeys(root: HKEY, subkey: &str) -> Vec<String> {
         RegCloseKey(hkey);
     }
     keys
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_wide_char_conversion() {
+        let original = "SystemPilot Test String 123";
+        let wide = to_wide_chars(original);
+        assert_eq!(wide.last(), Some(&0), "Must be null-terminated");
+        let decoded = from_wide_null_terminated(&wide);
+        assert_eq!(decoded, original);
+    }
 }

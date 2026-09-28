@@ -1,5 +1,8 @@
 // Unit tests for SystemPilot Semantic Versioning and Update Logic
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { parseSemVer, compareSemVer, isNewerVersion } from '../frontend/src/services/updates/version.js';
 
 let passed = 0;
@@ -46,6 +49,45 @@ assert(compareSemVer('1.0.0', '1.0.0-beta.1') === 1, '1.0.0 > 1.0.0-beta.1');
 // Test 7: Malformed / edge cases
 assert(parseSemVer(null).raw === '0.0.0', 'parseSemVer(null) safely defaults to 0.0.0');
 assert(parseSemVer('').raw === '0.0.0', 'parseSemVer("") safely defaults to 0.0.0');
+
+console.log('\n=== Running Authoritative Version Consistency Check ===\n');
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '..');
+
+const rootPkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
+const authoritativeVersion = rootPkg.version;
+assert(!!authoritativeVersion, `Authoritative version defined in package.json: v${authoritativeVersion}`);
+
+// 1. package-lock.json
+const rootLock = JSON.parse(fs.readFileSync(path.join(rootDir, 'package-lock.json'), 'utf-8'));
+assert(rootLock.version === authoritativeVersion, `package-lock.json version matches (${rootLock.version} === ${authoritativeVersion})`);
+
+// 2. frontend/package.json
+const frontPkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'frontend', 'package.json'), 'utf-8'));
+assert(frontPkg.version === authoritativeVersion, `frontend/package.json version matches (${frontPkg.version} === ${authoritativeVersion})`);
+
+// 3. frontend/package-lock.json
+const frontLock = JSON.parse(fs.readFileSync(path.join(rootDir, 'frontend', 'package-lock.json'), 'utf-8'));
+assert(frontLock.version === authoritativeVersion, `frontend/package-lock.json version matches (${frontLock.version} === ${authoritativeVersion})`);
+
+// 4. src-tauri/Cargo.toml
+const cargoToml = fs.readFileSync(path.join(rootDir, 'src-tauri', 'Cargo.toml'), 'utf-8');
+const cargoMatch = cargoToml.match(/^version\s*=\s*"([^"]+)"/m);
+const cargoVersion = cargoMatch ? cargoMatch[1] : null;
+assert(cargoVersion === authoritativeVersion, `src-tauri/Cargo.toml version matches (${cargoVersion} === ${authoritativeVersion})`);
+
+// 5. src-tauri/tauri.conf.json
+const tauriConf = JSON.parse(fs.readFileSync(path.join(rootDir, 'src-tauri', 'tauri.conf.json'), 'utf-8'));
+assert(tauriConf.version === authoritativeVersion, `src-tauri/tauri.conf.json version matches (${tauriConf.version} === ${authoritativeVersion})`);
+
+// 6. release/latest.json
+const latestPath = path.join(rootDir, 'release', 'latest.json');
+if (fs.existsSync(latestPath)) {
+  const latestJson = JSON.parse(fs.readFileSync(latestPath, 'utf-8'));
+  assert(latestJson.version === authoritativeVersion, `release/latest.json version matches (${latestJson.version} === ${authoritativeVersion})`);
+}
 
 console.log(`\nTests Completed: ${passed} Passed, ${failed} Failed.`);
 if (failed > 0) process.exit(1);

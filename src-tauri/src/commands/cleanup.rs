@@ -338,3 +338,27 @@ pub fn get_cleanup_history(
 ) -> Result<Vec<crate::db::CleanupLog>, String> {
     db.get_cleanup_history(50).map_err(|e| e.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dir_stats_calculation() {
+        let temp_dir = std::env::temp_dir().join(format!(
+            "sp_test_clean_{}",
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)
+        ));
+        fs::create_dir_all(&temp_dir).unwrap();
+        let file1 = temp_dir.join("test1.txt");
+        let file2 = temp_dir.join("test2.txt");
+        fs::write(&file1, b"hello").unwrap();
+        fs::write(&file2, b"world!").unwrap();
+
+        let (count, bytes) = get_dir_stats(&temp_dir);
+        assert_eq!(count, 2);
+        assert_eq!(bytes, 11);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+}

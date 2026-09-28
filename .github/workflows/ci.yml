@@ -63,7 +63,7 @@ jobs:
         run: cargo check --manifest-path src-tauri/Cargo.toml
 
       - name: Run System Layer Unit Tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        run: cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture
 
   windows-build-validation:
     name: Windows Application Build Validation
@@ -101,4 +101,4 @@ jobs:
       - name: Validate Tauri Application Compilation
         env:
           RUST_MIN_STACK: "16777216"
-        run: npx tauri build --no-bundle
+        run: npm run tauri build --no-bundle

@@ -359,3 +359,32 @@ pub fn resume_process(pid: u32) -> Result<bool, String> {
         Ok(true)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
+
+    #[test]
+    fn test_critical_process_whitelist() {
+        assert!(CRITICAL_PROCESSES.contains(&"system"));
+        assert!(CRITICAL_PROCESSES.contains(&"explorer.exe"));
+        assert!(CRITICAL_PROCESSES.contains(&"systempilot.exe"));
+        assert!(!CRITICAL_PROCESSES.contains(&"arbitrary_app.exe"));
+    }
+
+    #[test]
+    fn test_process_enumeration_resilience() {
+        let mut sys = System::new();
+        sys.refresh_processes_specifics(ProcessesToUpdate::All, ProcessRefreshKind::new());
+        let procs = sys.processes();
+        assert!(
+            !procs.is_empty(),
+            "Running OS must have at least one active process"
+        );
+        for (_pid, p) in procs.iter() {
+            let _ = p.name();
+            let _ = p.memory();
+        }
+    }
+}
