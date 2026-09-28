@@ -5,6 +5,39 @@ All notable changes to **SystemPilot** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-09-28
+
+### Performance
+- Reduced IPC mutex contention: global system-stats polling increased from 1 000 ms to 2 000 ms
+- Async process enumeration: `get_processes` now async + spawn_blocking (was primary Not Responding cause)
+- Lazy-loaded Recharts components across CPU/GPU/Disk/Network/Performance pages via React.lazy()
+- Chart histories bounded at 180 data points max
+
+### Security
+- Native SHA-256 verification in update path: replaced certutil/PowerShell subprocess with pure-Rust sha2 crate
+- Added Authenticode signature verification step to release workflow
+- Strict URL allowlist for update downloads and release notes
+
+### Accessibility
+- All form inputs have explicit htmlFor label associations (WCAG 2.1 AA)
+- Removed placeholder-only field labels; added persistent visible labels
+
+### Maintainability
+- Extracted repeated Recharts JSX patterns into shared components
+- Extracted subcomponents in NetworkMonitor, Performance, StartupManager to reduce complexity
+- All monitor pages use isFetchingRef concurrency guard
+
+### Fixes
+- Side effect in React state updater (benchmark results) moved outside setter
+- All setInterval polling loops properly cleaned up on unmount
+
+### Release
+- Version synchronized via centralized bump script across all manifests
+- Release pipeline: NSIS Setup .exe, WiX .msi, Portable .zip, SHA256SUMS.txt
+- Code signing: pipeline complete, requires OV/EV certificate + GitHub secrets to activate
+
+---
+
 ## [1.0.0] - 2026-09-22
 
 ### Added

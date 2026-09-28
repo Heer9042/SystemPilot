@@ -3605,12 +3605,13 @@ dependencies = [
 
 [[package]]
 name = "systempilot"
-version = "0.0.6"
+version = "0.1.0"
 dependencies = [
  "chrono",
  "parking_lot",
  "serde",
  "serde_json",
+ "sha2",
  "sysinfo",
  "tauri",
  "tauri-build",
