@@ -1,0 +1,56 @@
+[package]
+name = "systempilot"
+version = "0.0.1"
+description = "SystemPilot - Windows System Management & Performance Suite"
+authors = ["SystemPilot Team"]
+license = "MIT"
+repository = "https://github.com/Heer9042/SystemPilot"
+edition = "2021"
+
+[lib]
+name = "systempilot_lib"
+crate-type = ["staticlib", "rlib"]
+
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sysinfo = "0.31"
+chrono = { version = "0.4", features = ["serde"] }
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+    "Win32_System_SystemInformation",
+    "Win32_System_Memory",
+    "Win32_System_Power",
+    "Win32_System_Registry",
+    "Win32_System_LibraryLoader",
+    "Win32_Security",
+    "Win32_UI_WindowsAndMessaging",
+] }
+parking_lot = "0.12"
+sha2 = "0.10"
+
+# BUILD SCRIPT CRASH FIX (MinGW/GNU toolchain):
+# Without this, tauri v2.11.6's build script crashes with STATUS_ACCESS_VIOLATION
+# when built in full release mode without debug info. This happens because the
+# highly optimized build-script binary triggers undefined behavior in certain
+# Rust stdlib paths under the MinGW runtime. Enabling debug info in build-override
+# disables the problematic optimizations without affecting the final binary.
+# This has no effect on MSVC builds (which don't have this issue).
+[profile.release.build-override]
+debug = true
+
+[profile.dev.build-override]
+opt-level = 2
+debug = true
+

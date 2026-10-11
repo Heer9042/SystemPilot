@@ -1,0 +1,632 @@
+import React, { useState, useEffect } from 'react';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { api } from '../services/tauriApi';
+import { formatBytes } from '../utils/formatters';
+import {
+  CircuitBoard,
+  Cpu,
+  Layers,
+  HardDrive,
+  Tv,
+  Wifi,
+  Volume2,
+  ShieldCheck,
+  RefreshCw,
+  Copy,
+  Check,
+  Battery,
+  BatteryCharging,
+  Laptop,
+  CheckCircle2,
+  Download,
+  Info,
+  Thermometer,
+} from 'lucide-react';
+
+function HwCapabilitiesBar({ hw }) {
+  const capabilities = [
+    { label: 'Virtualization (VT-x/AMD-V)', active: hw?.cpu_virtualization },
+    { label: 'TPM Security Processor', active: hw?.tpm_status && !hw.tpm_status.includes('Not') },
+    { label: 'Secure Boot Firmware', active: hw?.secure_boot_enabled === true },
+    { label: 'Battery Telemetry', active: hw?.has_battery === true },
+    { label: 'Multi-GPU Subsystem', active: (hw?.gpus?.length || 0) > 1 },
+    { label: 'High Definition Audio', active: (hw?.audio_devices?.length || 0) > 0 },
+  ];
+
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+      <span className="font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 text-[11px] uppercase tracking-wider flex-shrink-0">
+        <Info className="w-3.5 h-3.5 text-brand-500" /> Capabilities:
+      </span>
+      {capabilities.map((cap) => (
+        <span
+          key={cap.label}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 flex-shrink-0 border transition-colors ${
+            cap.active
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+              : 'bg-slate-100 dark:bg-surface-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'
+          }`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${cap.active ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+          {cap.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function HwChassisBadge({ hasBattery }) {
+  if (hasBattery) {
+    return (
+      <Badge variant="brand" size="xs" className="flex items-center gap-1">
+        <Battery className="w-3 h-3" /> Portable / Laptop System
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="neutral" size="xs" className="flex items-center gap-1">
+      <Laptop className="w-3 h-3" /> Desktop Workstation
+    </Badge>
+  );
+}
+
+function HwPowerStatusBox({ hw }) {
+  if (!hw?.has_battery) {
+    return (
+      <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-right font-mono text-xs text-slate-400">
+        <span className="text-[11px] block text-slate-500">Power Configuration</span>
+        <span className="text-slate-200 font-semibold">Continuous AC Main Power</span>
+        <span className="text-[10px] block text-slate-400">Battery: Not exposed on this device</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
+      <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+        {hw.is_ac_connected ? <BatteryCharging className="w-5 h-5" /> : <Battery className="w-5 h-5" />}
+      </div>
+      <div className="text-right font-mono">
+        <span className="text-xs text-slate-400 block">Battery Level</span>
+        <span className="text-lg font-bold text-white">
+          {hw.battery_percent !== null && hw.battery_percent !== undefined
+            ? `${Math.round(hw.battery_percent)}%`
+            : 'N/A'}
+        </span>
+        <span className="text-[10px] text-slate-400 block">
+          {hw.is_ac_connected ? 'Plugged into AC' : 'On Battery'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function HwHeroOverview({ hw, formatUptime }) {
+  return (
+    <Card className="p-5 bg-gradient-to-r from-slate-900 via-surface-900 to-indigo-950 text-white border-brand-500/30 shadow-xl relative overflow-hidden">
+      <div className="absolute right-0 top-0 bottom-0 opacity-5 pointer-events-none flex items-center pr-8">
+        <CircuitBoard className="w-64 h-64 text-brand-400" />
+      </div>
+
+      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <HwChassisBadge hasBattery={hw?.has_battery} />
+            <Badge variant="secondary" size="xs">{hw?.chassis_type || 'Personal Computer'}</Badge>
+            <Badge variant="outline" size="xs" className="text-brand-300 border-brand-500/40">
+              Windows {hw?.os_display_version || '11'} ({hw?.os_edition || 'Pro'})
+            </Badge>
+          </div>
+
+          <h3 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            {hw?.system_manufacturer || 'Windows PC'} {hw?.system_product_name || ''}
+          </h3>
+
+          <p className="text-xs text-slate-300 flex items-center gap-3 font-mono flex-wrap">
+            <span>OS Build: <strong>{hw?.os_build || '22631'}</strong></span>
+            <span>•</span>
+            <span>Arch: <strong>{hw?.os_architecture || 'x86_64'}</strong></span>
+            <span>•</span>
+            <span>Uptime: <strong>{formatUptime(hw?.uptime_seconds)}</strong></span>
+          </p>
+        </div>
+
+        <HwPowerStatusBox hw={hw} />
+      </div>
+    </Card>
+  );
+}
+
+function HwMotherboardCard({ hw }) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <CircuitBoard className="w-4 h-4 text-brand-500 dark:text-brand-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Motherboard & System Board</h3>
+        </div>
+        <Badge variant="secondary" size="xs">Hardware Layer</Badge>
+      </div>
+
+      <div className="space-y-2 text-xs">
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Board Manufacturer:</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">{hw?.motherboard_manufacturer || 'OEM System'}</span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Product Model:</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">{hw?.motherboard_product || 'System Board'}</span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Board Version / Revision:</span>
+          <span className="font-mono text-slate-900 dark:text-slate-200">{hw?.motherboard_version || '1.0'}</span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">System Family / SKU:</span>
+          <span className="font-mono text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
+            {hw?.system_family || 'Standard'} / {hw?.system_sku || 'Default'}
+          </span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-slate-500 dark:text-slate-400">Chassis Form Factor:</span>
+          <span className="font-semibold text-brand-600 dark:text-brand-400">{hw?.chassis_type || 'Desktop'}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function HwBiosCard({ hw }) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">BIOS & System Firmware</h3>
+        </div>
+        <Badge variant={hw?.secure_boot_enabled ? 'success' : 'neutral'} size="xs">
+          {hw?.secure_boot_enabled ? 'Secure Boot Active' : 'UEFI Standard'}
+        </Badge>
+      </div>
+
+      <div className="space-y-2 text-xs">
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">BIOS Vendor:</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">{hw?.bios_vendor || 'AMI / Insyde'}</span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">BIOS Version:</span>
+          <span className="font-semibold font-mono text-brand-600 dark:text-brand-300">{hw?.bios_version || 'UEFI 2.8'}</span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Release Date:</span>
+          <span className="font-mono text-slate-700 dark:text-slate-300">{hw?.bios_release_date || 'N/A'}</span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Firmware Architecture:</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">{hw?.firmware_type || 'UEFI 64-bit'}</span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-slate-500 dark:text-slate-400">TPM Module Security:</span>
+          <span className="font-mono text-emerald-600 dark:text-emerald-400">{hw?.tpm_status || 'TPM 2.0 (Detected)'}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function HwCpuCard({ hw, stats }) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Cpu className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Processor & Architecture</h3>
+        </div>
+        <Badge variant="primary" size="xs">{hw?.cpu_architecture || 'x86_64'}</Badge>
+      </div>
+
+      <div className="space-y-2 text-xs">
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">CPU Model:</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-200 truncate max-w-[220px]">
+            {hw?.cpu_brand || stats?.cpu_name || 'Processor'}
+          </span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Topology:</span>
+          <span className="font-semibold font-mono text-brand-600 dark:text-brand-300">
+            {hw?.cpu_physical_cores || 8} Physical / {hw?.cpu_logical_cores || 16} Threads
+          </span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Base Clock Speed:</span>
+          <span className="font-mono text-slate-900 dark:text-slate-200">~{hw?.cpu_base_frequency_mhz || stats?.cpu_freq_mhz || 2800} MHz</span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-slate-500 dark:text-slate-400">Hardware Virtualization:</span>
+          <span className={hw?.cpu_virtualization ? 'font-semibold text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}>
+            {hw?.cpu_virtualization ? 'Supported & Active (VT-x/AMD-V)' : 'Not detected'}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function HwMemoryCard({ hw, stats }) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Physical Memory (RAM)</h3>
+        </div>
+        <Badge variant={hw?.memory_form_factor ? 'success' : 'neutral'} size="xs">
+          {hw?.memory_form_factor || 'Installed RAM'}
+        </Badge>
+      </div>
+
+      <div className="space-y-2 text-xs">
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Total Installed Capacity:</span>
+          <span className="font-bold font-mono text-emerald-600 dark:text-emerald-300">
+            {formatBytes(hw?.total_memory_bytes || stats?.ram_total_bytes || 0)}
+          </span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Form Factor:</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">
+            {hw?.memory_form_factor || 'DIMM / SO-DIMM'}
+          </span>
+        </div>
+        <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-800/50">
+          <span className="text-slate-500 dark:text-slate-400">Memory Generation:</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">
+            {hw?.memory_type || 'DDR4 / DDR5 SDRAM'}
+          </span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-slate-500 dark:text-slate-400">Clock Frequency / Data Rate:</span>
+          <span className="font-mono text-slate-900 dark:text-slate-200">
+            {hw?.memory_speed_mhz > 0
+              ? `${hw.memory_speed_mhz} MT/s (MHz)`
+              : <span className="text-slate-400 dark:text-slate-500 italic font-normal font-sans">Standard Clock</span>}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function HwGpuCard({ hw }) {
+  return (
+    <Card className="space-y-3 md:col-span-2">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Tv className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Graphics Hardware & Display Adapters</h3>
+        </div>
+        <span className="text-xs font-mono text-slate-500">{hw?.gpus?.length || 0} Adapter(s)</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {hw?.gpus && hw.gpus.length > 0 ? (
+          hw.gpus.map((gpu) => (
+            <div
+              key={gpu.device_id || gpu.name}
+              className="p-3 rounded-lg bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                  {gpu.name}
+                </span>
+                {gpu.is_primary && (
+                  <Badge variant="primary" size="xs">Primary Display</Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-400 font-mono text-[11px] pt-1">
+                <div>Vendor: <strong className="text-slate-800 dark:text-slate-200">{gpu.vendor}</strong></div>
+                <div>VRAM: <strong className="text-brand-600 dark:text-brand-300">{formatBytes(gpu.dedicated_memory_bytes)}</strong></div>
+                <div className="col-span-2 truncate">Driver: <span className="text-slate-700 dark:text-slate-300">{gpu.driver_version}</span></div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="p-3 text-xs text-slate-500">Standard Direct3D / WDDM Display Adapter</div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function HwStorageCard({ hw }) {
+  return (
+    <Card className="space-y-3 md:col-span-2">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <HardDrive className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Storage Partitions & Volumes</h3>
+        </div>
+        <span className="text-xs font-mono text-slate-500">{hw?.storage_drives?.length || 0} Partition(s)</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {hw?.storage_drives && hw.storage_drives.length > 0 ? (
+          hw.storage_drives.map((d) => {
+            const used = d.total_space_bytes - d.available_space_bytes;
+            const pct = d.total_space_bytes > 0 ? Math.round((used / d.total_space_bytes) * 100) : 0;
+            return (
+              <div
+                key={d.mount_point || d.name}
+                className="p-3 rounded-lg bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-2 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 font-mono">
+                    <HardDrive className="w-3.5 h-3.5 text-brand-500" />
+                    {d.mount_point} ({d.file_system || 'NTFS'})
+                  </span>
+                  <Badge variant="secondary" size="xs">{d.disk_kind}</Badge>
+                </div>
+
+                <div className="w-full bg-slate-200 dark:bg-surface-900 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-[width] ${
+                      pct > 90 ? 'bg-status-danger' : pct > 75 ? 'bg-amber-500' : 'bg-brand-500'
+                    }`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                  <span>Free: {formatBytes(d.available_space_bytes)}</span>
+                  <span>Total: {formatBytes(d.total_space_bytes)}</span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-3 text-xs text-slate-500">No storage partitions enumerated</div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function HwNetworkCard({ hw }) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Wifi className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Network Interfaces & MAC</h3>
+        </div>
+        <span className="text-xs font-mono text-slate-500">{hw?.network_adapters?.length || 0} Adapter(s)</span>
+      </div>
+
+      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+        {hw?.network_adapters && hw.network_adapters.length > 0 ? (
+          hw.network_adapters.slice(0, 5).map((net) => (
+            <div
+              key={net.mac_address || net.name}
+              className="p-2.5 rounded bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 text-xs space-y-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-900 dark:text-slate-200 truncate max-w-[180px]">
+                  {net.name}
+                </span>
+                <Badge variant={net.is_up ? 'success' : 'secondary'} size="xs">
+                  {net.is_up ? 'Active' : 'Disconnected'}
+                </Badge>
+              </div>
+              <div className="flex justify-between font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                <span>MAC: {net.mac_address || 'Unavailable'}</span>
+                <span>{net.ip_addresses?.[0] || 'No IP assigned'}</span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-xs text-slate-500">Ethernet / Wi-Fi Adapter</div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function HwAudioCard({ hw }) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Volume2 className="w-4 h-4 text-pink-500 dark:text-pink-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Audio Controllers & Endpoints</h3>
+        </div>
+        <Badge variant="secondary" size="xs">HD Audio</Badge>
+      </div>
+
+      <div className="space-y-2">
+        {hw?.audio_devices && hw.audio_devices.length > 0 ? (
+          hw.audio_devices.map((dev) => (
+            <div
+              key={typeof dev === 'string' ? dev : dev.id || dev.name}
+              className="p-2.5 rounded bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 text-xs flex items-center gap-2"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-pink-500 flex-shrink-0" />
+              <span className="font-medium text-slate-900 dark:text-slate-200 truncate">{dev}</span>
+            </div>
+          ))
+        ) : (
+          <div className="p-2.5 rounded bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+            High Definition Audio Controller (Realtek / Intel / NVIDIA)
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function HwCoolingCard({ cooling }) {
+  const hasGpuFan = cooling?.gpu_fan_rpm !== null && cooling?.gpu_fan_rpm !== undefined;
+  const hasCpuFan = cooling?.cpu_fan_rpm !== null && cooling?.cpu_fan_rpm !== undefined;
+
+  return (
+    <Card className="space-y-3 md:col-span-2">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Thermometer className="w-4 h-4 text-cyan-500" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Cooling, Fan Speed & Thermal Sensors</h3>
+        </div>
+        <Badge variant={hasGpuFan || hasCpuFan ? 'success' : 'neutral'} size="xs">
+          {hasGpuFan || hasCpuFan ? 'Fan Telemetry Active' : 'Passive / EC Unexposed'}
+        </Badge>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-slate-400 text-[11px]">CPU Fan RPM</span>
+          <p className="font-mono font-bold text-slate-800 dark:text-slate-100">
+            {hasCpuFan ? `${cooling.cpu_fan_rpm} RPM` : 'Fan speed unavailable on this hardware'}
+          </p>
+          <span className="text-[10px] text-slate-400">Motherboard Header</span>
+        </div>
+
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-slate-400 text-[11px]">GPU Fan RPM</span>
+          <p className="font-mono font-bold text-slate-800 dark:text-slate-100">
+            {hasGpuFan ? `${cooling.gpu_fan_rpm} RPM` : 'Fan speed unavailable on this hardware'}
+          </p>
+          <span className="text-[10px] text-slate-400">Graphics Cooler</span>
+        </div>
+
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-slate-400 text-[11px]">CPU Temperature</span>
+          <p className="font-mono font-bold text-brand-600 dark:text-brand-400">
+            {cooling?.cpu_temp_celsius ? `${Math.round(cooling.cpu_temp_celsius)}°C` : 'Telemetry unavailable'}
+          </p>
+          <span className="text-[10px] text-slate-400">Core Package</span>
+        </div>
+
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-slate-400 text-[11px]">GPU Temperature</span>
+          <p className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+            {cooling?.gpu_temp_celsius ? `${Math.round(cooling.gpu_temp_celsius)}°C` : 'Telemetry unavailable'}
+          </p>
+          <span className="text-[10px] text-slate-400">Silicon Diode</span>
+        </div>
+      </div>
+
+      <div className="p-2.5 rounded-lg bg-slate-50/50 dark:bg-surface-900/40 border border-slate-200/80 dark:border-slate-800/80 text-[11px] text-slate-500 flex items-center justify-between">
+        <span>Sensor Status: {cooling?.status_message || 'Hardware monitoring active'}</span>
+        <span className="text-[10px] opacity-70">Read-only diagnostic monitoring</span>
+      </div>
+    </Card>
+  );
+}
+
+export function HardwareMonitor({ stats }) {
+  const [hw, setHw] = useState(null);
+  const [cooling, setCooling] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const fetchHw = async () => {
+    setLoading(true);
+    try {
+      const [hwData, coolingData] = await Promise.all([
+        api.getHardwareSummary(),
+        api.getCoolingInfo().catch(() => null),
+      ]);
+      setHw(hwData);
+      setCooling(coolingData);
+    } catch (e) {
+      console.error('Failed to fetch hardware summary:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHw();
+  }, []);
+
+  const formatUptime = (totalSeconds) => {
+    if (!totalSeconds) return '0h 0m';
+    const d = Math.floor(totalSeconds / 86400);
+    const h = Math.floor((totalSeconds % 86400) / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    return `${h}h ${m}m`;
+  };
+
+  const handleCopySpecs = () => {
+    if (!hw) return;
+    const text = `
+=== SystemPilot Hardware Specification Report ===
+System: ${hw.system_manufacturer} ${hw.system_product_name} (${hw.chassis_type})
+Motherboard: ${hw.motherboard_manufacturer} ${hw.motherboard_product} (v${hw.motherboard_version})
+BIOS: ${hw.bios_vendor} ${hw.bios_version} (${hw.bios_release_date})
+Processor: ${hw.cpu_brand} (${hw.cpu_physical_cores} Physical Cores, ${hw.cpu_logical_cores} Threads, ~${hw.cpu_base_frequency_mhz} MHz)
+Memory: ${formatBytes(hw.total_memory_bytes)} (${hw.memory_form_factor}, ${hw.memory_type})
+Graphics: ${hw.gpus?.map((g) => `${g.name} (${formatBytes(g.dedicated_memory_bytes)} VRAM, Driver: ${g.driver_version})`).join('; ') || 'N/A'}
+Storage: ${hw.storage_drives?.map((d) => `${d.mount_point} ${formatBytes(d.total_space_bytes)} [${d.disk_kind}]`).join('; ') || 'N/A'}
+Operating System: ${hw.os_name} ${hw.os_edition} ${hw.os_display_version} (Build ${hw.os_build}, ${hw.os_architecture})
+Security: Secure Boot ${hw.secure_boot_enabled ? 'Enabled' : 'Disabled'}, ${hw.tpm_status}
+Battery: ${hw.has_battery ? `${Math.round(hw.battery_percent || 0)}% (${hw.is_ac_connected ? 'AC' : 'Battery'})` : 'Not available on this device (Desktop PC)'}
+=================================================
+    `.trim();
+
+    navigator.clipboard?.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      {/* Top Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <CircuitBoard className="w-5 h-5 text-brand-500 dark:text-brand-400" />
+            Comprehensive Hardware Specification & Diagnostics
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Physical motherboard, firmware, CPU topology, GPU adapters, storage, and peripheral devices
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            icon={copied ? Check : Copy}
+            onClick={handleCopySpecs}
+            className={copied ? 'text-emerald-600 border-emerald-500' : ''}
+          >
+            {copied ? 'Specs Copied!' : 'Copy Hardware Spec'}
+          </Button>
+          <Button variant="secondary" size="sm" icon={RefreshCw} disabled={loading} onClick={fetchHw}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
+      </div>
+
+      <HwCapabilitiesBar hw={hw} />
+
+      <HwHeroOverview hw={hw} formatUptime={formatUptime} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <HwMotherboardCard hw={hw} />
+        <HwBiosCard hw={hw} />
+        <HwCpuCard hw={hw} stats={stats} />
+        <HwMemoryCard hw={hw} stats={stats} />
+        <HwGpuCard hw={hw} />
+        <HwStorageCard hw={hw} />
+        <HwCoolingCard cooling={cooling} />
+        <HwNetworkCard hw={hw} />
+        <HwAudioCard hw={hw} />
+      </div>
+    </div>
+  );
+}

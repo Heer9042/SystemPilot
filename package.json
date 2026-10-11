@@ -1,0 +1,29 @@
+{
+  "name": "systempilot",
+  "private": true,
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": "SystemPilot Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Heer9042/SystemPilot.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "test": "node scripts/test.js",
+    "test:security": "node scripts/test.js",
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "format": "cargo fmt --manifest-path src-tauri/Cargo.toml",
+    "format:check": "cargo fmt --check --manifest-path src-tauri/Cargo.toml",
+    "bump": "node scripts/bump_version.js",
+    "set-version": "node scripts/bump_version.js",
+    "prebuild": "node scripts/bump_version.js --sync",
+    "tauri": "node scripts/run_tauri.js"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

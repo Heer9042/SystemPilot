@@ -1,0 +1,105 @@
+================================================================================
+SystemPilot — Installation & Permissions
+================================================================================
+
+SystemPilot is an advanced Windows system management, hardware monitoring,
+and performance optimization suite.
+
+This installation disclosure explains every Windows permission, privilege, and
+capability required by SystemPilot's features, following the Principle of Least
+Privilege.
+
+--------------------------------------------------------------------------------
+INSTALLATION MODES & PERMISSIONS
+--------------------------------------------------------------------------------
+
+1. Current User Installation (Recommended for Standard Accounts):
+   - Destination: %LOCALAPPDATA%\Programs\SystemPilot
+   - Administrator Access: Not required (Zero UAC prompts)
+   - Scope: Installed strictly within user-space. Does not modify machine-wide
+     system directories or global Windows settings.
+
+2. All Users Installation (Machine-Wide):
+   - Destination: %ProgramFiles%\SystemPilot
+   - Administrator Access: Required during installation only
+   - Scope: Installs program binaries into the protected Program Files directory
+     and makes shortcuts available to all users on this computer.
+
+--------------------------------------------------------------------------------
+DETAILED PERMISSION & CAPABILITY INVENTORY
+--------------------------------------------------------------------------------
+
+1. Installation Location & File Access
+   - Permission: Read & write access to application installation directory.
+   - Purpose: Store SystemPilot executable, runtime libraries, and resources.
+   - Required / Optional: Required for installation.
+   - Administrator Approval: Required ONLY if installing to Program Files;
+     NOT required for Current User installation in %LOCALAPPDATA%.
+   - User Data Storage: User settings and performance history are stored
+     strictly in %LOCALAPPDATA%\SystemPilot\systempilot.db.
+
+2. System Telemetry & Hardware Monitoring
+   - Permission: Standard user performance counter queries (PDH / sysinfo).
+   - Purpose: Real-time monitoring of CPU cores, GPU engines, memory utilization,
+     disk throughput, network traffic, and thermal sensors.
+   - Required / Optional: Required for monitoring dashboards.
+   - Administrator Approval: No. Queries run un-elevated using standard Windows APIs.
+
+3. Process Management (Priority & Working Set Optimization)
+   - Permission: Process query, priority adjustment, and process termination.
+   - Purpose: Manage CPU priority classes and trim working sets of running apps.
+   - Required / Optional: Optional (invoked on user demand).
+   - Administrator Approval: User-owned processes do NOT require elevation.
+     Protected system processes and services are shielded and require elevation.
+
+4. User Space Temporary File Cleanup
+   - Permission: File enumeration and deletion in user temporary folders.
+   - Purpose: Safely recover disk space from %TEMP%, browser caches, and thumbnails.
+   - Required / Optional: Optional (manual scan & clean on user demand).
+   - Administrator Approval: No for user caches. Cleaning %WINDIR%\Temp requires
+     administrator privileges and is skipped gracefully if un-elevated.
+
+5. Startup Configuration Management
+   - Permission: Read/write access to HKCU Run key and user Startup folder.
+   - Purpose: View, enable, disable, and manage startup applications.
+   - Required / Optional: Optional.
+   - Administrator Approval: Standard user startup entries (HKCU) require NO
+     elevation. System-wide entries (HKLM) require administrator privileges and
+     are safely locked with a clear explanation when running un-elevated.
+
+6. Windows Service & Security Status Enumeration
+   - Permission: Read-only Windows Service Control Manager queries and WMI status.
+   - Purpose: Display Windows services, TPM 2.0 status, Secure Boot, and HVCI.
+   - Required / Optional: Optional (viewing security and service diagnostics).
+   - Administrator Approval: No. Enumeration is performed in read-only mode.
+
+7. Network Access & Update Checks
+   - Permission: Outbound HTTPS client connections (WinINet / web APIs).
+   - Purpose: Query GitHub Releases (api.github.com) for digitally verified updates
+     and perform ICMP ping latency tests for network diagnostics.
+   - Required / Optional: Optional (update checking and network ping tests).
+   - Inbound Firewall Exceptions: NONE. SystemPilot never opens listening ports,
+     hosts remote servers, or weakens Windows Firewall.
+   - Administrator Approval: No.
+
+8. Protected Operations (On-Demand UAC Elevation Only)
+   - Operations: Reboot to UEFI Firmware (shutdown /r /fw) and machine-wide updates.
+   - Purpose: Advanced firmware management and silent machine-wide updater.
+   - Required / Optional: Optional (invoked only on explicit user request).
+   - Administrator Approval: Yes. Prompts for UAC approval via standard Windows
+     consent dialog only when the specific action is triggered.
+   - If Declined: The operation is cleanly cancelled without crashing the app.
+
+--------------------------------------------------------------------------------
+OPTIONAL INSTALLATION SETTINGS
+--------------------------------------------------------------------------------
+- Create Desktop Shortcut: Recommended for easy access.
+- Create Start Menu Shortcut: Configured in the Windows Start Menu.
+- Launch After Installation: Starts SystemPilot immediately.
+- Enable Automatic Startup: Optional, disabled by default. Can be toggled in
+  SystemPilot Settings at any time.
+
+================================================================================
+SystemPilot adheres strictly to the Principle of Least Privilege and never
+weakens Windows security settings, collects passwords, or modifies unrelated files.
+================================================================================
