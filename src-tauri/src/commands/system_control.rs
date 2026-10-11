@@ -291,6 +291,8 @@ pub struct BiosFirmwareInfo {
     pub bios_release_date: String,
     pub system_manufacturer: String,
     pub system_model: String,
+    pub motherboard_manufacturer: String,
+    pub motherboard_product: String,
     pub firmware_type: String,      // "UEFI" | "Legacy BIOS"
     pub uefi_boot_status: String,   // "UEFI Boot Mode" | "Legacy CSM Boot Mode"
     pub secure_boot_status: String, // "Enabled" | "Disabled" | "Not Supported"
@@ -301,6 +303,9 @@ pub struct BiosFirmwareInfo {
     pub virtualization_enabled: bool,
     pub cpu_virtualization_type: String, // "Intel VT-x" | "AMD-V" | "Unavailable"
     pub restart_to_uefi_supported: bool,
+    pub oem_setup_key: String,
+    pub oem_boot_menu_key: String,
+    pub csm_support: String,
 }
 
 #[tauri::command]
@@ -323,6 +328,12 @@ pub fn get_bios_firmware_info() -> Result<BiosFirmwareInfo, String> {
                 .unwrap_or_else(|| "System Manufacturer".to_string());
         let system_model = get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "SystemProductName")
             .unwrap_or_else(|| "System Product".to_string());
+        let motherboard_manufacturer =
+            get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BaseBoardManufacturer")
+                .unwrap_or_else(|| system_manufacturer.clone());
+        let motherboard_product =
+            get_reg_string(HKEY_LOCAL_MACHINE, bios_key, "BaseBoardProduct")
+                .unwrap_or_else(|| "Motherboard".to_string());
 
         // Check Secure Boot from registry
         let sb_key = "SYSTEM\\CurrentControlSet\\Control\\SecureBoot\\State";
@@ -338,7 +349,7 @@ pub fn get_bios_firmware_info() -> Result<BiosFirmwareInfo, String> {
             };
 
         let firmware_type = if is_uefi_detected {
-            "UEFI".to_string()
+            "UEFI (Unified Extensible Firmware Interface)".to_string()
         } else {
             // Check PEFirmwareType if available
             if let Some(t) = get_reg_dword(
@@ -347,9 +358,9 @@ pub fn get_bios_firmware_info() -> Result<BiosFirmwareInfo, String> {
                 "PEFirmwareType",
             ) {
                 if t == 2 {
-                    "UEFI".to_string()
+                    "UEFI (Unified Extensible Firmware Interface)".to_string()
                 } else {
-                    "Legacy BIOS".to_string()
+                    "Legacy BIOS (CSM / 16-bit MBR)".to_string()
                 }
             } else {
                 "UEFI (Modern Windows 10/11 Architecture)".to_string()
@@ -357,9 +368,43 @@ pub fn get_bios_firmware_info() -> Result<BiosFirmwareInfo, String> {
         };
 
         let uefi_boot_status = if firmware_type.contains("UEFI") {
-            "UEFI Native Boot".to_string()
+            "UEFI Native Boot (GPT)".to_string()
         } else {
-            "Legacy BIOS / CSM Mode".to_string()
+            "Legacy BIOS / CSM Mode (MBR)".to_string()
+        };
+
+        let csm_support = if firmware_type.contains("UEFI") {
+            if secure_boot_status == "Enabled" {
+                "Disabled (Secure Boot Active / Pure UEFI)".to_string()
+            } else {
+                "Available (CSM can be toggled in BIOS)".to_string()
+            }
+        } else {
+            "Active (Legacy CSM Enabled)".to_string()
+        };
+
+        // Determine OEM Setup and Boot Keys
+        let mfg_lower = format!("{} {}", system_manufacturer, bios_vendor).to_lowercase();
+        let (oem_setup_key, oem_boot_menu_key) = if mfg_lower.contains("hp") || mfg_lower.contains("hewlett") {
+            ("F10 (or Esc for Startup Menu)".to_string(), "F9 (Boot Device Options)".to_string())
+        } else if mfg_lower.contains("dell") || mfg_lower.contains("alienware") {
+            ("F2 (BIOS Setup)".to_string(), "F12 (One-Time Boot Menu)".to_string())
+        } else if mfg_lower.contains("lenovo") || mfg_lower.contains("thinkpad") {
+            ("F1 (or Enter at startup / Novo button)".to_string(), "F12 (Boot Device Menu)".to_string())
+        } else if mfg_lower.contains("asus") || mfg_lower.contains("asustek") {
+            ("Del or F2 (EZ Mode / Advanced)".to_string(), "F8 (Quick Boot)".to_string())
+        } else if mfg_lower.contains("msi") || mfg_lower.contains("micro-star") {
+            ("Del (Click BIOS Setup)".to_string(), "F11 (Boot Menu)".to_string())
+        } else if mfg_lower.contains("acer") || mfg_lower.contains("predator") {
+            ("F2 or Del".to_string(), "F12 (Boot Menu)".to_string())
+        } else if mfg_lower.contains("gigabyte") || mfg_lower.contains("aorus") {
+            ("Del (BIOS Setup)".to_string(), "F12 (Boot Menu)".to_string())
+        } else if mfg_lower.contains("asrock") {
+            ("Del or F2".to_string(), "F11 (Boot Menu)".to_string())
+        } else if mfg_lower.contains("surface") || mfg_lower.contains("microsoft") {
+            ("Hold Volume Up + Press Power button".to_string(), "Hold Volume Down + Press Power button".to_string())
+        } else {
+            ("Del or F2".to_string(), "F12 or F8".to_string())
         };
 
         // TPM check
@@ -412,6 +457,8 @@ pub fn get_bios_firmware_info() -> Result<BiosFirmwareInfo, String> {
             bios_release_date,
             system_manufacturer,
             system_model,
+            motherboard_manufacturer,
+            motherboard_product,
             firmware_type,
             uefi_boot_status,
             secure_boot_status,
@@ -422,6 +469,9 @@ pub fn get_bios_firmware_info() -> Result<BiosFirmwareInfo, String> {
             virtualization_enabled: virt_enabled,
             cpu_virtualization_type: cpu_virt_type,
             restart_to_uefi_supported: is_uefi_detected,
+            oem_setup_key,
+            oem_boot_menu_key,
+            csm_support,
         })
     }
     #[cfg(not(target_os = "windows"))]

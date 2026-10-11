@@ -27,45 +27,32 @@ export function UpdateModal({
   onCheckAgain,
   onOpenReleaseNotes,
 }) {
-  const dialogRef = React.useRef(null);
-
   React.useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (isOpen) {
-      if (!dialog.open) {
-        dialog.showModal();
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
       }
-    } else {
-      if (dialog.open) {
-        dialog.close();
-      }
-    }
-  }, [isOpen]);
-
-  React.useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const handleCancel = (e) => {
-      e.preventDefault();
-      onClose();
     };
-
-    dialog.addEventListener('cancel', handleCancel);
-    return () => dialog.removeEventListener('cancel', handleCancel);
-  }, [onClose]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <button
+        type="button"
+        aria-label="Close update dialog backdrop"
+        tabIndex={-1}
+        className="fixed inset-0 w-full h-full bg-transparent border-0 cursor-default"
+        onClick={onClose}
+      />
       <dialog
-        ref={dialogRef}
         open
         aria-labelledby="update-modal-title"
-        className="w-full max-w-lg bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-800 dark:text-slate-100 animate-scaleUp p-0 m-0"
+        className="w-full max-w-lg bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-800 dark:text-slate-100 animate-scaleUp p-0 m-auto relative z-10 backdrop:bg-transparent"
       >
         {/* Header */}
         <div className="px-6 py-4 bg-slate-50 dark:bg-surface-950/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">

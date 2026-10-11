@@ -457,41 +457,199 @@ function GpuAdapterSelectorCard({
   setSelectedAdapterIndex,
   setGpuHistory,
 }) {
+  const getVendorTheme = (vendor) => {
+    const v = (vendor || '').toLowerCase();
+    if (v.includes('nvidia')) {
+      return {
+        badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+        ring: 'ring-emerald-500 dark:ring-emerald-400 border-emerald-500',
+        activeBg: 'bg-emerald-50/40 dark:bg-emerald-950/20',
+        iconBg: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+      };
+    }
+    if (v.includes('intel')) {
+      return {
+        badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+        ring: 'ring-blue-500 dark:ring-blue-400 border-blue-500',
+        activeBg: 'bg-blue-50/40 dark:bg-blue-950/20',
+        iconBg: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+      };
+    }
+    if (v.includes('amd') || v.includes('radeon')) {
+      return {
+        badge: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
+        ring: 'ring-red-500 dark:ring-red-400 border-red-500',
+        activeBg: 'bg-red-50/40 dark:bg-red-950/20',
+        iconBg: 'bg-red-500/20 text-red-600 dark:text-red-400',
+      };
+    }
+    return {
+      badge: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
+      ring: 'ring-indigo-500 dark:ring-indigo-400 border-indigo-500',
+      activeBg: 'bg-indigo-50/40 dark:bg-indigo-950/20',
+      iconBg: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
+    };
+  };
+
   return (
-    <Card className="p-4 bg-gradient-to-r from-white via-slate-50 to-indigo-50/30 dark:from-surface-900 dark:via-surface-900 dark:to-indigo-950/20 border-slate-200 dark:border-indigo-500/20 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-brand-500" /> Graphics Adapter
-            </span>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Select any detected graphics processor or integrated GPU to inspect telemetry
-            </p>
-          </div>
+    <Card className="p-4 bg-gradient-to-r from-white via-slate-50 to-indigo-50/30 dark:from-surface-900 dark:via-surface-900 dark:to-indigo-950/20 border-slate-200 dark:border-indigo-500/20 shadow-sm space-y-3.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <label htmlFor="gpu-adapter-select" className="sr-only">Graphics Adapter</label>
-            <div className="relative min-w-[280px]">
-              <select
-                id="gpu-adapter-select"
-                value={selectedAdapterIndex}
-                onChange={(e) => {
-                  const newIdx = Number(e.target.value);
-                  setSelectedAdapterIndex(newIdx);
-                  setGpuHistory([]);
-                }}
-                className="w-full appearance-none pl-3.5 pr-8 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-surface-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
-              >
-                {adapters.map((adapter, idx) => (
-                  <option key={adapter.id || `gpu-${adapter.adapter_index}-${adapter.name}`} value={idx}>
-                    {adapter.name} ({adapter.vendor} • {adapter.gpu_type}{adapter.is_primary ? ' • Primary' : ''})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
-            </div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-brand-500" /> Detected Graphics Adapters ({adapters.length})
+            </span>
+            <Badge variant="brand" size="xs">
+              Universal Multi-GPU
+            </Badge>
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Click any graphics processor below to switch active telemetry, VRAM metrics, engine load, and connected displays
+          </p>
+        </div>
+
+        {/* Quick Dropdown Fallback */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <label htmlFor="gpu-adapter-select" className="sr-only">Graphics Adapter</label>
+          <div className="relative min-w-[220px]">
+            <select
+              id="gpu-adapter-select"
+              value={selectedAdapterIndex}
+              onChange={(e) => {
+                const newIdx = Number(e.target.value);
+                setSelectedAdapterIndex(newIdx);
+                setGpuHistory([]);
+              }}
+              className="w-full appearance-none pl-3 pr-7 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-surface-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+            >
+              {adapters.map((adapter, idx) => (
+                <option key={adapter.device_id || `gpu-${adapter.adapter_index}-${adapter.name}`} value={idx}>
+                  GPU {idx}: {adapter.name} ({adapter.vendor} • {adapter.gpu_type})
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2 pointer-events-none" />
           </div>
         </div>
-      </Card>
+      </div>
+
+      {/* Interactive Clickable GPU Adapter Cards Grid */}
+      <div className={`grid grid-cols-1 ${adapters.length > 1 ? 'md:grid-cols-2 lg:grid-cols-' + Math.min(adapters.length, 3) : 'md:grid-cols-1'} gap-3`}>
+        {adapters.map((adapter, idx) => {
+          const isSelected = idx === selectedAdapterIndex;
+          const theme = getVendorTheme(adapter.vendor);
+
+          const coreTemp = adapter.thermal?.core_temperature_celsius;
+          const loadPercent = adapter.utilization_percent != null
+            ? Math.round(adapter.utilization_percent)
+            : (adapter.memory?.dedicated_utilization_percent != null
+                ? Math.round(adapter.memory.dedicated_utilization_percent)
+                : null);
+
+          const dedicatedVram = adapter.memory?.dedicated_total_bytes || 0;
+          const displayCount = adapter.displays?.length || 0;
+
+          return (
+            <div
+              key={adapter.device_id || `gpu-card-${adapter.adapter_index}-${adapter.name}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                if (!isSelected) {
+                  setSelectedAdapterIndex(idx);
+                  setGpuHistory([]);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  setSelectedAdapterIndex(idx);
+                  setGpuHistory([]);
+                }
+              }}
+              className={`group relative p-3.5 rounded-xl border transition-all duration-200 cursor-pointer text-left flex flex-col justify-between gap-3 ${
+                isSelected
+                  ? `ring-2 ${theme.ring} ${theme.activeBg} border-transparent shadow-md`
+                  : 'bg-white dark:bg-surface-800 border-slate-200 dark:border-slate-700/80 hover:border-brand-400 dark:hover:border-brand-500 hover:shadow-sm'
+              }`}
+            >
+              <div className="space-y-2">
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`p-1.5 rounded-lg ${theme.iconBg} flex-shrink-0`}>
+                      <Tv className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold font-mono text-slate-400 uppercase">GPU {idx}</span>
+                        {adapter.is_primary && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-brand-500/10 text-brand-600 dark:text-brand-300 border border-brand-500/20">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-slate-50 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                        {adapter.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${theme.badge}`}>
+                      {adapter.vendor}
+                    </span>
+                    <Badge variant="neutral" size="xs">
+                      {adapter.gpu_type}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Metrics Pill Grid */}
+                <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono">
+                  <div className="p-1.5 rounded bg-slate-50 dark:bg-surface-900 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[9px] text-slate-400 block font-sans uppercase font-semibold">VRAM</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {dedicatedVram > 0 ? formatBytes(dedicatedVram) : 'Shared'}
+                    </span>
+                  </div>
+
+                  <div className="p-1.5 rounded bg-slate-50 dark:bg-surface-900 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[9px] text-slate-400 block font-sans uppercase font-semibold">Load</span>
+                    <span className="font-bold text-brand-600 dark:text-brand-400">
+                      {loadPercent != null ? `${loadPercent}%` : 'Standby'}
+                    </span>
+                  </div>
+
+                  <div className="p-1.5 rounded bg-slate-50 dark:bg-surface-900 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[9px] text-slate-400 block font-sans uppercase font-semibold">Temp</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      {coreTemp != null ? `${coreTemp.toFixed(0)}°C` : (displayCount > 0 ? `${displayCount} Disp` : 'Passive')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status / Click Action Footer */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                {isSelected ? (
+                  <span className="font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Active Selection</span>
+                  </span>
+                ) : (
+                  <span className="text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-300 font-medium flex items-center gap-1 transition-colors">
+                    <span>Click to inspect</span> &rarr;
+                  </span>
+                )}
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {adapter.driver_version ? `v${adapter.driver_version.split('.').slice(-2).join('.')}` : 'WDDM'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 

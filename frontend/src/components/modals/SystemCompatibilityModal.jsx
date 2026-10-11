@@ -74,15 +74,17 @@ export function SystemCompatibilityModal({ isOpen, onClose, report, onRefresh, l
   const [copied, setCopied] = useState(false);
 
   const env = report?.environment;
-  const features = report?.features || [];
+  const features = report?.features;
 
   const categories = useMemo(() => {
-    const set = new Set(features.map((f) => f.category));
+    const list = features || [];
+    const set = new Set(list.map((f) => f.category));
     return ['All', ...Array.from(set)];
   }, [features]);
 
   const filteredFeatures = useMemo(() => {
-    return features.filter((f) => {
+    const list = features || [];
+    return list.filter((f) => {
       if (selectedCategory !== 'All' && f.category !== selectedCategory) return false;
       if (selectedStatus !== 'All' && f.status !== selectedStatus) return false;
       return true;
@@ -110,7 +112,7 @@ export function SystemCompatibilityModal({ isOpen, onClose, report, onRefresh, l
       `- WebView2 Runtime: ${env?.webview2_available ? `Installed (v${env?.webview2_version || 'Active'})` : 'Missing'}`,
       ``,
       `## Feature Capabilities Matrix`,
-      ...features.map(
+      ...(features || []).map(
         (f) =>
           `- [${f.status}] ${f.name} (${f.category}): ${f.reason}${f.action_hint ? ` (Hint: ${f.action_hint})` : ''}`
       ),
@@ -222,11 +224,13 @@ export function SystemCompatibilityModal({ isOpen, onClose, report, onRefresh, l
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="text-[11px] text-slate-400">Status:</span>
             <select
+              id="compatibility-status-filter"
+              aria-label="Filter features by status"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-900 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none"
             >
-              <option value="All">All States ({features.length})</option>
+              <option value="All">All States ({features?.length || 0})</option>
               <option value="Supported">Supported</option>
               <option value="ReadOnly">Read-Only</option>
               <option value="PermissionRequired">Permission Required</option>

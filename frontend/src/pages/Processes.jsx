@@ -4,7 +4,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { api } from '../services/tauriApi';
-import { formatBytes, formatUptime } from '../utils/formatters';
+import { formatBytes } from '../utils/formatters';
 import { getUserErrorMessage, handleApplicationError } from '../services/errorHandler';
 import {
   Search,
@@ -27,26 +27,37 @@ import {
   Activity,
   Terminal,
   Cpu,
-  Database,
-  Clock,
-  User,
   AlertTriangle,
 } from 'lucide-react';
 
-export function Processes() {
-  const [processes, setProcesses] = useState([]);
-  const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all'); // 'all' | 'apps' | 'background' | 'windows'
-  const [sortField, setSortField] = useState('memory_bytes'); // 'name' | 'pid' | 'cpu_usage' | 'memory_bytes'
-  const [sortAsc, setSortAsc] = useState(false);
-  const [selectedPid, setSelectedPid] = useState(null);
-  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [statusNotification, setStatusNotification] = useState(null);
-  const [copiedFeedback, setCopiedFeedback] = useState(false);
-  const [loadError, setLoadError] = useState(null);
+function computeProcessStats(processes) {
+  let appsCount = 0;
+  let bgCount = 0;
+  let winCount = 0;
+  let totalCpu = 0;
+  let totalMemory = 0;
 
-  // Modals state
+  for (const p of processes || []) {
+    if (!p) continue;
+    if (p.category === 'apps') appsCount++;
+    else if (p.category === 'windows') winCount++;
+    else bgCount++;
+
+    totalCpu += Number(p.cpu_usage) || 0;
+    totalMemory += Number(p.memory_bytes) || 0;
+  }
+
+  return {
+    total: (processes || []).length,
+    apps: appsCount,
+    background: bgCount,
+    windows: winCount,
+    totalCpu,
+    totalMemory,
+  };
+}
+
+function useProcessActions({ selectedProcess, setSelectedPid, fetchProcesses }) {
   const [endTaskModal, setEndTaskModal] = useState(false);
   const [endTreeModal, setEndTreeModal] = useState(false);
   const [propertiesModal, setPropertiesModal] = useState(false);
@@ -54,125 +65,8 @@ export function Processes() {
   const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [priorityModal, setPriorityModal] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState('Normal');
-
-  // Context menu state
-  const [contextMenu, setContextMenu] = useState(null); // { x, y, process }
-
-  const isFetchingRef = useRef(false);
-  const tableRef = useRef(null);
-
-  // Fetch process list from native Rust backend
-  const fetchProcesses = useCallback(async (manual = false) => {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
-    if (manual) setIsLoading(true);
-
-    try {
-      const list = await api.getProcesses();
-      setProcesses(list || []);
-      setLoadError(null);
-    } catch (err) {
-      console.error('Failed to enumerate processes:', err);
-      const handled = handleApplicationError(err, 'general');
-      const isPermission =
-        String(err).toLowerCase().includes('access denied') ||
-        String(err).toLowerCase().includes('permission');
-      setLoadError({
-        message: handled.message,
-        referenceId: handled.referenceId,
-        isPermission,
-      });
-      setStatusNotification({
-        type: 'error',
-        message: handled.message || 'Failed to enumerate system processes',
-      });
-    } finally {
-      isFetchingRef.current = false;
-      if (manual) setIsLoading(false);
-    }
-  }, []);
-
-  // Currently selected process object
-  const selectedProcess = useMemo(() => {
-    if (selectedPid == null) return null;
-    return (processes || []).find((p) => p && p.pid === selectedPid) || null;
-  }, [processes, selectedPid]);
-
-  // Sort handler
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortField(field);
-      setSortAsc(false); // Default descending for metrics (highest first)
-    }
-  };
-
-  // Filter & sort logic
-  const filteredAndSortedProcesses = useMemo(() => {
-    const q = (search || '').trim().toLowerCase();
-
-    return (processes || [])
-      .filter((p) => {
-        if (!p) return false;
-        // Category filtering
-        if (filterCategory !== 'all') {
-          if (p.category !== filterCategory) return false;
-        }
-
-        // Search matching
-        if (q) {
-          const matchesName = (p.name || '').toLowerCase().includes(q);
-          const matchesPid = (p.pid != null ? p.pid.toString() : '').includes(q);
-          const matchesPath = (p.exe_path || '').toLowerCase().includes(q);
-          if (!matchesName && !matchesPid && !matchesPath) return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        let valA = a?.[sortField];
-        let valB = b?.[sortField];
-
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-
-        if (valA == null) return 1;
-        if (valB == null) return -1;
-
-        if (valA < valB) return sortAsc ? -1 : 1;
-        if (valA > valB) return sortAsc ? 1 : -1;
-        return 0;
-      });
-  }, [processes, search, filterCategory, sortField, sortAsc]);
-
-  // Aggregate stats
-  const stats = useMemo(() => {
-    let appsCount = 0;
-    let bgCount = 0;
-    let winCount = 0;
-    let totalCpu = 0;
-    let totalMemory = 0;
-
-    for (const p of processes || []) {
-      if (!p) continue;
-      if (p.category === 'apps') appsCount++;
-      else if (p.category === 'windows') winCount++;
-      else bgCount++;
-
-      totalCpu += Number(p.cpu_usage) || 0;
-      totalMemory += Number(p.memory_bytes) || 0;
-    }
-
-    return {
-      total: (processes || []).length,
-      apps: appsCount,
-      background: bgCount,
-      windows: winCount,
-      totalCpu,
-      totalMemory,
-    };
-  }, [processes]);
+  const [statusNotification, setStatusNotification] = useState(null);
+  const [copiedFeedback, setCopiedFeedback] = useState(false);
 
   // Action: End Task (with PID reuse validation & error handling)
   const handleConfirmEndTask = async () => {
@@ -250,7 +144,7 @@ export function Processes() {
   };
 
   // Action: Properties Dialog
-  const handleOpenProperties = async (proc = selectedProcess) => {
+  const handleOpenProperties = useCallback(async (proc = selectedProcess) => {
     if (!proc) return;
     setPropertiesModal(true);
     setPropertiesLoading(true);
@@ -267,7 +161,7 @@ export function Processes() {
     } finally {
       setPropertiesLoading(false);
     }
-  };
+  }, [selectedProcess]);
 
   // Action: Copy Details to Clipboard
   const handleCopyDetails = (proc = selectedProcess) => {
@@ -352,92 +246,46 @@ export function Processes() {
     }
   };
 
-  // Context Menu opener
-  const handleContextMenu = (e, proc) => {
-    e.preventDefault();
-    setSelectedPid(proc.pid);
-    const menuWidth = 220;
-    const menuHeight = 280;
-    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 10);
-    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 10);
-    setContextMenu({ x, y, process: proc });
+  return {
+    endTaskModal,
+    setEndTaskModal,
+    endTreeModal,
+    setEndTreeModal,
+    propertiesModal,
+    setPropertiesModal,
+    propertiesData,
+    propertiesLoading,
+    priorityModal,
+    setPriorityModal,
+    selectedPriority,
+    setSelectedPriority,
+    statusNotification,
+    setStatusNotification,
+    copiedFeedback,
+    handleConfirmEndTask,
+    handleConfirmEndTree,
+    handleOpenFileLocation,
+    handleOpenProperties,
+    handleCopyDetails,
+    handleApplyPriority,
+    handleSuspendProcess,
+    handleResumeProcess,
   };
+}
 
-  // Initial load
-  useEffect(() => {
-    fetchProcesses(true);
-  }, [fetchProcesses]);
-
-  // Polling with auto-refresh pause/resume support
-  useEffect(() => {
-    if (!isAutoRefresh) return;
-    const interval = setInterval(() => {
-      fetchProcesses(false);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [isAutoRefresh, fetchProcesses]);
-
-  // Close context menu on outside click or scroll
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (contextMenu && !e.target.closest('#process-context-menu')) {
-        setContextMenu(null);
-      }
-    };
-    window.addEventListener('click', handleOutsideClick);
-    window.addEventListener('contextmenu', handleOutsideClick);
-    return () => {
-      window.removeEventListener('click', handleOutsideClick);
-      window.removeEventListener('contextmenu', handleOutsideClick);
-    };
-  }, [contextMenu]);
-
-  // Keyboard navigation across table
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-
-      if (e.key === 'Escape') {
-        setSelectedPid(null);
-        setContextMenu(null);
-        return;
-      }
-
-      if (filteredAndSortedProcesses.length === 0) return;
-
-      const currentIndex = filteredAndSortedProcesses.findIndex(
-        (p) => p.pid === selectedPid
-      );
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        const nextIndex =
-          currentIndex < filteredAndSortedProcesses.length - 1
-            ? currentIndex + 1
-            : 0;
-        setSelectedPid(filteredAndSortedProcesses[nextIndex].pid);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const prevIndex =
-          currentIndex > 0
-            ? currentIndex - 1
-            : filteredAndSortedProcesses.length - 1;
-        setSelectedPid(filteredAndSortedProcesses[prevIndex].pid);
-      } else if (e.key === 'Delete' && selectedProcess) {
-        e.preventDefault();
-        setEndTaskModal(true);
-      } else if (e.key === 'Enter' && selectedProcess) {
-        e.preventDefault();
-        handleOpenProperties(selectedProcess);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPid, selectedProcess, filteredAndSortedProcesses]);
-
+function ProcessHeaderToolbar({
+  stats,
+  search,
+  setSearch,
+  filterCategory,
+  setFilterCategory,
+  isAutoRefresh,
+  setIsAutoRefresh,
+  fetchProcesses,
+  isLoading,
+}) {
   return (
-    <div className="space-y-4 animate-fadeIn select-none font-sans pb-12">
+    <>
       {/* 1. Header with Task Manager Style Telemetry Badges */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-3">
         <div>
@@ -477,8 +325,12 @@ export function Processes() {
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         {/* Search input */}
         <div className="relative w-full lg:w-80">
+          <label htmlFor="process-search-input" className="sr-only">
+            Search processes, PID, or location
+          </label>
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
           <input
+            id="process-search-input"
             type="text"
             placeholder="Search processes, PID, or location..."
             value={search}
@@ -488,6 +340,7 @@ export function Processes() {
           {search && (
             <button
               type="button"
+              aria-label="Clear search"
               onClick={() => setSearch('')}
               className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
             >
@@ -578,535 +431,617 @@ export function Processes() {
           </Button>
         </div>
       </div>
+    </>
+  );
+}
 
-      {/* 3. Action Toolbar (Enabled when process is selected) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-100/80 dark:bg-surface-900/90 border border-slate-200/80 dark:border-slate-800 text-xs">
-        <div className="flex items-center gap-2">
-          {selectedProcess ? (
-            <div className="flex items-center gap-2 bg-white dark:bg-surface-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-              <span className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px]">
-                {selectedProcess.name}
-              </span>
-              <span className="font-mono text-slate-500 text-[11px]">
-                (PID {selectedProcess.pid})
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedPid(null)}
-                className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs ml-1"
-                title="Deselect process (Esc)"
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <span className="text-slate-500 dark:text-slate-400 italic text-[11px] px-2">
-              Select a process from the table below to manage it (↑ / ↓ keys or click)
+function ProcessActionBar({
+  selectedProcess,
+  setSelectedPid,
+  actions,
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-100/80 dark:bg-surface-900/90 border border-slate-200/80 dark:border-slate-800 text-xs">
+      <div className="flex items-center gap-2">
+        {selectedProcess ? (
+          <div className="flex items-center gap-2 bg-white dark:bg-surface-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            <span className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px]">
+              {selectedProcess.name}
             </span>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button
-            variant="danger"
-            size="sm"
-            disabled={!selectedProcess}
-            icon={XCircle}
-            onClick={() => setEndTaskModal(true)}
-            title="Terminate process safely (Del)"
-          >
-            End Task
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={!selectedProcess}
-            icon={GitFork}
-            onClick={() => setEndTreeModal(true)}
-            title="Terminate process and all child processes"
-          >
-            End Process Tree
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={!selectedProcess || !selectedProcess.exe_path}
-            icon={FolderOpen}
-            onClick={() => handleOpenFileLocation(selectedProcess)}
-            title={
-              selectedProcess && !selectedProcess.exe_path
-                ? 'Executable path is not accessible for this system process'
-                : 'Show containing folder in Windows File Explorer'
-            }
-          >
-            Open Location
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={!selectedProcess}
-            icon={Sliders}
-            onClick={() => {
-              if (selectedProcess) {
-                setSelectedPriority(selectedProcess.priority);
-                setPriorityModal(true);
-              }
-            }}
-            title="Adjust CPU scheduling priority"
-          >
-            Priority
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={!selectedProcess}
-            icon={Info}
-            onClick={() => handleOpenProperties(selectedProcess)}
-            title="Inspect comprehensive process metadata (Enter)"
-          >
-            Properties
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={!selectedProcess}
-            icon={copiedFeedback ? Check : Copy}
-            onClick={() => handleCopyDetails(selectedProcess)}
-            title="Copy process details to clipboard"
-          >
-            {copiedFeedback ? 'Copied' : 'Copy'}
-          </Button>
-        </div>
+            <span className="font-mono text-slate-500 text-[11px]">
+              (PID {selectedProcess.pid})
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedPid(null)}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs ml-1"
+              title="Deselect process (Esc)"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <span className="text-slate-500 dark:text-slate-400 italic text-[11px] px-2">
+            Select a process from the table below to manage it (↑ / ↓ keys or click)
+          </span>
+        )}
       </div>
 
-      {/* Notifications / Toast */}
-      {statusNotification && (
-        <div
-          className={`p-3 rounded-xl border text-xs flex items-center justify-between transition-all ${
-            statusNotification.type === 'error'
-              ? 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-800/40 dark:text-rose-300'
-              : statusNotification.type === 'warning'
-              ? 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800/40 dark:text-amber-300'
-              : 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-300'
-          }`}
+      {/* Action Buttons */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Button
+          variant="danger"
+          size="sm"
+          disabled={!selectedProcess}
+          icon={XCircle}
+          onClick={() => actions.setEndTaskModal(true)}
+          title="Terminate process safely (Del)"
         >
-          <div className="flex items-center gap-2">
-            {statusNotification.type === 'error' ? (
-              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            ) : statusNotification.type === 'warning' ? (
-              <ShieldAlert className="w-4 h-4 flex-shrink-0" />
-            ) : (
-              <Check className="w-4 h-4 flex-shrink-0" />
-            )}
-            <span>{statusNotification.message}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setStatusNotification(null)}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-white ml-2 text-xs"
-          >
-            ✕
-          </button>
-        </div>
+          End Task
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!selectedProcess}
+          icon={GitFork}
+          onClick={() => actions.setEndTreeModal(true)}
+          title="Terminate process and all child processes"
+        >
+          End Process Tree
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!selectedProcess || !selectedProcess.exe_path}
+          icon={FolderOpen}
+          onClick={() => actions.handleOpenFileLocation(selectedProcess)}
+          title={
+            selectedProcess && !selectedProcess.exe_path
+              ? 'Executable path is not accessible for this system process'
+              : 'Show containing folder in Windows File Explorer'
+          }
+        >
+          Open Location
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!selectedProcess}
+          icon={Sliders}
+          onClick={() => {
+            if (selectedProcess) {
+              actions.setSelectedPriority(selectedProcess.priority);
+              actions.setPriorityModal(true);
+            }
+          }}
+          title="Adjust CPU scheduling priority"
+        >
+          Priority
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!selectedProcess}
+          icon={Info}
+          onClick={() => actions.handleOpenProperties(selectedProcess)}
+          title="Inspect comprehensive process metadata (Enter)"
+        >
+          Properties
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!selectedProcess}
+          icon={actions.copiedFeedback ? Check : Copy}
+          onClick={() => actions.handleCopyDetails(selectedProcess)}
+          title="Copy process details to clipboard"
+        >
+          {actions.copiedFeedback ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ProcessNotification({ statusNotification, setStatusNotification }) {
+  if (!statusNotification) return null;
+  return (
+    <div
+      className={`p-3 rounded-xl border text-xs flex items-center justify-between transition-all ${
+        statusNotification.type === 'error'
+          ? 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-800/40 dark:text-rose-300'
+          : statusNotification.type === 'warning'
+          ? 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800/40 dark:text-amber-300'
+          : 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-300'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {statusNotification.type === 'error' ? (
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+        ) : statusNotification.type === 'warning' ? (
+          <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+        ) : (
+          <Check className="w-4 h-4 flex-shrink-0" />
+        )}
+        <span>{statusNotification.message}</span>
+      </div>
+      <button
+        type="button"
+        aria-label="Dismiss notification"
+        onClick={() => setStatusNotification(null)}
+        className="text-slate-400 hover:text-slate-700 dark:hover:text-white ml-2 text-xs"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function getProcessCategoryBadge(category) {
+  if (category === 'apps') return { variant: 'brand', label: 'App' };
+  if (category === 'windows') return { variant: 'neutral', label: 'Windows' };
+  return { variant: 'neutral', label: 'Background' };
+}
+
+function getProcessCpuClass(cpuUsage) {
+  const num = Number(cpuUsage) || 0;
+  if (num > 10) return 'text-rose-600 dark:text-rose-400 font-bold';
+  if (num > 3) return 'text-amber-600 dark:text-amber-400 font-medium';
+  return 'text-slate-600 dark:text-slate-400';
+}
+
+function ProcessNameCell({ proc }) {
+  let Icon = Layers;
+  let iconClass = 'text-slate-400 dark:text-slate-500';
+  if (proc.category === 'apps') {
+    Icon = AppWindow;
+    iconClass = 'text-brand-600 dark:text-brand-400';
+  } else if (proc.category === 'windows') {
+    Icon = ShieldCheck;
+    iconClass = 'text-slate-500 dark:text-slate-400';
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className={`w-4 h-4 flex-shrink-0 ${iconClass}`} />
+      <span className="truncate max-w-xs">{proc.name}</span>
+      {proc.is_critical && (
+        <ShieldAlert
+          className="w-3.5 h-3.5 text-amber-500 flex-shrink-0"
+          title="Protected Windows system process"
+        />
       )}
+    </div>
+  );
+}
 
-      {/* 4. Process Table Card */}
-      <Card className="p-0 overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
-        <div
-          ref={tableRef}
-          className="overflow-x-auto max-h-[640px] overflow-y-auto focus:outline-none"
-          tabIndex={0}
-        >
-          <table className="w-full text-left text-xs border-collapse">
-            {/* Header */}
-            <thead className="sticky top-0 bg-slate-100/95 dark:bg-surface-950/95 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 select-none z-10 font-semibold">
-              <tr>
-                <th
-                  onClick={() => handleSort('name')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 transition"
-                >
-                  <div className="flex items-center gap-1.5">
-                    Process Name
-                    {sortField === 'name' &&
-                      (sortAsc ? (
-                        <ChevronUp className="w-3.5 h-3.5 text-brand-600" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5 text-brand-600" />
-                      ))}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('pid')}
-                  className="py-3 px-3 cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 transition w-24"
-                >
-                  <div className="flex items-center gap-1.5">
-                    PID
-                    {sortField === 'pid' &&
-                      (sortAsc ? (
-                        <ChevronUp className="w-3.5 h-3.5 text-brand-600" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5 text-brand-600" />
-                      ))}
-                  </div>
-                </th>
-                <th className="py-3 px-3 w-32">Type</th>
-                <th className="py-3 px-3 w-28">Status</th>
-                <th
-                  onClick={() => handleSort('cpu_usage')}
-                  className="py-3 px-3 cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 transition w-28 text-right"
-                >
-                  <div className="flex items-center justify-end gap-1.5">
-                    CPU %
-                    {sortField === 'cpu_usage' &&
-                      (sortAsc ? (
-                        <ChevronUp className="w-3.5 h-3.5 text-brand-600" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5 text-brand-600" />
-                      ))}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('memory_bytes')}
-                  className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 transition w-36 text-right"
-                >
-                  <div className="flex items-center justify-end gap-1.5">
-                    Memory (RAM)
-                    {sortField === 'memory_bytes' &&
-                      (sortAsc ? (
-                        <ChevronUp className="w-3.5 h-3.5 text-brand-600" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5 text-brand-600" />
-                      ))}
-                  </div>
-                </th>
-                <th className="py-3 px-4 min-w-[200px]">Executable Path</th>
-              </tr>
-            </thead>
+function ProcessTableRow({
+  proc,
+  isSelected,
+  setSelectedPid,
+  handleRowKeyDown,
+  handleOpenProperties,
+  handleContextMenu,
+}) {
+  const catBadge = getProcessCategoryBadge(proc.category);
+  const cpuClass = getProcessCpuClass(proc.cpu_usage);
+  const isSuspended = (proc.status || '').toLowerCase().includes('suspend');
 
-            {/* Body */}
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
-              {filteredAndSortedProcesses.map((proc) => {
-                const isSelected = selectedPid === proc.pid;
+  return (
+    <tr
+      key={proc.pid}
+      tabIndex={0}
+      onClick={() => setSelectedPid(proc.pid)}
+      onKeyDown={(e) => handleRowKeyDown(e, proc.pid)}
+      onDoubleClick={() => handleOpenProperties(proc)}
+      onContextMenu={(e) => handleContextMenu(e, proc)}
+      className={`cursor-pointer transition-colors duration-75 text-slate-700 dark:text-slate-300 font-sans ${
+        isSelected
+          ? 'bg-brand-500/15 dark:bg-brand-500/20 text-slate-900 dark:text-white border-l-4 border-brand-500 font-medium'
+          : 'hover:bg-slate-50 dark:hover:bg-surface-800/40 border-l-4 border-transparent'
+      }`}
+    >
+      <td className="py-2.5 px-4 font-medium">
+        <ProcessNameCell proc={proc} />
+      </td>
 
-                return (
-                  <tr
-                    key={proc.pid}
-                    onClick={() => setSelectedPid(proc.pid)}
-                    onDoubleClick={() => handleOpenProperties(proc)}
-                    onContextMenu={(e) => handleContextMenu(e, proc)}
-                    className={`cursor-pointer transition-colors duration-75 text-slate-700 dark:text-slate-300 font-sans ${
-                      isSelected
-                        ? 'bg-brand-500/15 dark:bg-brand-500/20 text-slate-900 dark:text-white border-l-4 border-brand-500 font-medium'
-                        : 'hover:bg-slate-50 dark:hover:bg-surface-800/40 border-l-4 border-transparent'
-                    }`}
-                  >
-                    {/* Process Name & Icon */}
-                    <td className="py-2.5 px-4 font-medium">
-                      <div className="flex items-center gap-2">
-                        {proc.category === 'apps' ? (
-                          <AppWindow className="w-4 h-4 text-brand-600 dark:text-brand-400 flex-shrink-0" />
-                        ) : proc.category === 'windows' ? (
-                          <ShieldCheck className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
-                        ) : (
-                          <Layers className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-                        )}
-                        <span className="truncate max-w-xs">{proc.name}</span>
-                        {proc.is_critical && (
-                          <ShieldAlert
-                            className="w-3.5 h-3.5 text-amber-500 flex-shrink-0"
-                            title="Protected Windows system process"
-                          />
-                        )}
-                      </div>
-                    </td>
+      <td className="py-2.5 px-3 font-mono text-slate-500 dark:text-slate-400">
+        {proc.pid}
+      </td>
 
-                    {/* PID */}
-                    <td className="py-2.5 px-3 font-mono text-slate-500 dark:text-slate-400">
-                      {proc.pid}
-                    </td>
+      <td className="py-2.5 px-3 font-sans">
+        <Badge variant={catBadge.variant} size="xs">
+          {catBadge.label}
+        </Badge>
+      </td>
 
-                    {/* Type / Category */}
-                    <td className="py-2.5 px-3 font-sans">
-                      <Badge
-                        variant={
-                          proc.category === 'apps'
-                            ? 'brand'
-                            : proc.category === 'windows'
-                            ? 'neutral'
-                            : 'neutral'
-                        }
-                        size="xs"
-                      >
-                        {proc.category === 'apps'
-                          ? 'App'
-                          : proc.category === 'windows'
-                          ? 'Windows'
-                          : 'Background'}
-                      </Badge>
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-2.5 px-3 font-sans text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            (proc.status || '').toLowerCase().includes('suspend')
-                              ? 'bg-amber-500'
-                              : 'bg-emerald-500'
-                          }`}
-                        />
-                        <span className="capitalize text-slate-600 dark:text-slate-400">
-                          {proc.status || 'Running'}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* CPU Usage */}
-                    <td className="py-2.5 px-3 font-mono text-right">
-                      <span
-                        className={
-                          (Number(proc.cpu_usage) || 0) > 10
-                            ? 'text-rose-600 dark:text-rose-400 font-bold'
-                            : (Number(proc.cpu_usage) || 0) > 3
-                            ? 'text-amber-600 dark:text-amber-400 font-medium'
-                            : 'text-slate-600 dark:text-slate-400'
-                        }
-                      >
-                        {(Number(proc.cpu_usage) || 0).toFixed(1)}%
-                      </span>
-                    </td>
-
-                    {/* Memory (RAM) */}
-                    <td className="py-2.5 px-4 font-mono text-right text-slate-900 dark:text-slate-200">
-                      {formatBytes(proc.memory_bytes || 0)}
-                    </td>
-
-                    {/* Executable Path */}
-                    <td className="py-2.5 px-4 font-mono text-xs text-slate-500 dark:text-slate-400 truncate max-w-md">
-                      {proc.exe_path ? (
-                        <span title={proc.exe_path}>{proc.exe_path}</span>
-                      ) : (
-                        <span className="italic text-slate-400 dark:text-slate-600 font-sans">
-                          Unavailable
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {/* Error state if enumeration failed and process list is empty */}
-              {processes.length === 0 && loadError && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-14 text-center font-sans"
-                  >
-                    <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto p-5 rounded-2xl bg-rose-500/5 border border-rose-500/20">
-                      <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500">
-                        <AlertTriangle className="w-5 h-5" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="font-semibold text-sm text-slate-800 dark:text-slate-100">
-                          Process Enumeration Unavailable
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {loadError.message}
-                        </p>
-                        {loadError.referenceId && (
-                          <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
-                            Reference: {loadError.referenceId}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => fetchProcesses(true)}
-                        disabled={isLoading}
-                        icon={RefreshCw}
-                        className={isLoading ? 'animate-spin' : ''}
-                      >
-                        Retry Enumeration
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-
-              {/* Empty state when process list is empty but loading or no search results */}
-              {processes.length === 0 && !loadError && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-16 text-center text-slate-400 dark:text-slate-500 font-sans"
-                  >
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-8 h-8 opacity-40 text-slate-400 animate-spin" />
-                      <p className="font-medium text-sm">Enumerating Windows processes...</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-
-              {/* Empty state when search produces no matches */}
-              {processes.length > 0 && filteredAndSortedProcesses.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-16 text-center text-slate-400 dark:text-slate-500 font-sans"
-                  >
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Search className="w-8 h-8 opacity-40 text-slate-400" />
-                      <p className="font-medium text-sm">
-                        No running processes matching &ldquo;{search}&rdquo;
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        Try modifying your search query or switching category filters.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <td className="py-2.5 px-3 font-sans text-xs">
+        <div className="flex items-center gap-1.5">
+          <span className={`w-1.5 h-1.5 rounded-full ${isSuspended ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+          <span className="capitalize text-slate-600 dark:text-slate-400">
+            {proc.status || 'Running'}
+          </span>
         </div>
-      </Card>
+      </td>
 
-      {/* 5. Custom Context Menu */}
-      {contextMenu && (
-        <div
-          id="process-context-menu"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-          className="fixed z-50 w-56 rounded-xl bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 shadow-2xl py-1.5 text-xs text-slate-700 dark:text-slate-300 font-sans animate-scaleUp"
-        >
-          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-slate-500 truncate">
-            {contextMenu.process.name} (PID {contextMenu.process.pid})
+      <td className="py-2.5 px-3 font-mono text-right">
+        <span className={cpuClass}>
+          {(Number(proc.cpu_usage) || 0).toFixed(1)}%
+        </span>
+      </td>
+
+      <td className="py-2.5 px-4 font-mono text-right text-slate-900 dark:text-slate-200">
+        {formatBytes(proc.memory_bytes || 0)}
+      </td>
+
+      <td className="py-2.5 px-4 font-mono text-xs text-slate-500 dark:text-slate-400 truncate max-w-md">
+        {proc.exe_path ? (
+          <span title={proc.exe_path}>{proc.exe_path}</span>
+        ) : (
+          <span className="italic text-slate-400 dark:text-slate-600 font-sans">
+            Unavailable
+          </span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function SortHeaderCell({ field, label, currentField, sortAsc, onSort, onKeyDown, widthClass = '', align = 'left' }) {
+  const isCurrent = currentField === field;
+  const isRight = align === 'right';
+
+  return (
+    <th
+      tabIndex={0}
+      onClick={() => onSort(field)}
+      onKeyDown={(e) => onKeyDown(e, field)}
+      className={`py-3 px-3 cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 transition ${widthClass} ${isRight ? 'text-right' : ''}`}
+    >
+      <div className={`flex items-center gap-1.5 ${isRight ? 'justify-end' : ''}`}>
+        {label}
+        {isCurrent && (
+          sortAsc ? (
+            <ChevronUp className="w-3.5 h-3.5 text-brand-600" />
+          ) : (
+            <ChevronDown className="w-3.5 h-3.5 text-brand-600" />
+          )
+        )}
+      </div>
+    </th>
+  );
+}
+
+function ProcessTableHeader({ sortField, sortAsc, handleSort, handleSortKeyDown }) {
+  return (
+    <thead className="sticky top-0 bg-slate-100/95 dark:bg-surface-950/95 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 select-none z-10 font-semibold">
+      <tr>
+        <SortHeaderCell
+          field="name"
+          label="Process Name"
+          currentField={sortField}
+          sortAsc={sortAsc}
+          onSort={handleSort}
+          onKeyDown={handleSortKeyDown}
+          widthClass="px-4"
+        />
+        <SortHeaderCell
+          field="pid"
+          label="PID"
+          currentField={sortField}
+          sortAsc={sortAsc}
+          onSort={handleSort}
+          onKeyDown={handleSortKeyDown}
+          widthClass="w-24"
+        />
+        <th className="py-3 px-3 w-32">Type</th>
+        <th className="py-3 px-3 w-28">Status</th>
+        <SortHeaderCell
+          field="cpu_usage"
+          label="CPU %"
+          currentField={sortField}
+          sortAsc={sortAsc}
+          onSort={handleSort}
+          onKeyDown={handleSortKeyDown}
+          widthClass="w-28"
+          align="right"
+        />
+        <SortHeaderCell
+          field="memory_bytes"
+          label="Memory (RAM)"
+          currentField={sortField}
+          sortAsc={sortAsc}
+          onSort={handleSort}
+          onKeyDown={handleSortKeyDown}
+          widthClass="w-36 px-4"
+          align="right"
+        />
+        <th className="py-3 px-4 min-w-[200px]">Executable Path</th>
+      </tr>
+    </thead>
+  );
+}
+
+function ProcessTableEmptyStates({ processesLength, filteredCount, loadError, fetchProcesses, isLoading, search }) {
+  if (processesLength === 0 && loadError) {
+    return (
+      <tr>
+        <td colSpan={7} className="py-14 text-center font-sans">
+          <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto p-5 rounded-2xl bg-rose-500/5 border border-rose-500/20">
+            <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-semibold text-sm text-slate-800 dark:text-slate-100">
+                Process Enumeration Unavailable
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {loadError.message}
+              </p>
+              {loadError.referenceId && (
+                <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                  Reference: {loadError.referenceId}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => fetchProcesses(true)}
+              disabled={isLoading}
+              icon={RefreshCw}
+              className={isLoading ? 'animate-spin' : ''}
+            >
+              Retry Enumeration
+            </Button>
           </div>
+        </td>
+      </tr>
+    );
+  }
 
-          <button
-            type="button"
-            onClick={() => {
-              setContextMenu(null);
-              setEndTaskModal(true);
-            }}
-            className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
-          >
-            <XCircle className="w-4 h-4" />
-            End Task
-          </button>
+  if (processesLength === 0 && !loadError) {
+    return (
+      <tr>
+        <td colSpan={7} className="py-16 text-center text-slate-400 dark:text-slate-500 font-sans">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <RefreshCw className="w-8 h-8 opacity-40 text-slate-400 animate-spin" />
+            <p className="font-medium text-sm">Enumerating Windows processes...</p>
+          </div>
+        </td>
+      </tr>
+    );
+  }
 
-          <button
-            type="button"
-            onClick={() => {
-              setContextMenu(null);
-              setEndTreeModal(true);
-            }}
-            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
-          >
-            <GitFork className="w-4 h-4 text-amber-500" />
-            End Process Tree
-          </button>
+  if (processesLength > 0 && filteredCount === 0) {
+    return (
+      <tr>
+        <td colSpan={7} className="py-16 text-center text-slate-400 dark:text-slate-500 font-sans">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <Search className="w-8 h-8 opacity-40 text-slate-400" />
+            <p className="font-medium text-sm">
+              No running processes matching &ldquo;{search}&rdquo;
+            </p>
+            <p className="text-xs text-slate-400">
+              Try modifying your search query or switching category filters.
+            </p>
+          </div>
+        </td>
+      </tr>
+    );
+  }
 
-          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+  return null;
+}
 
-          <button
-            type="button"
-            disabled={!contextMenu.process.exe_path}
-            onClick={() => {
-              setContextMenu(null);
-              handleOpenFileLocation(contextMenu.process);
-            }}
-            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 disabled:opacity-50 flex items-center gap-2"
-          >
-            <FolderOpen className="w-4 h-4 text-slate-500" />
-            Open File Location
-          </button>
+function ProcessTable({
+  tableRef,
+  sortField,
+  sortAsc,
+  handleSort,
+  handleSortKeyDown,
+  filteredAndSortedProcesses,
+  selectedPid,
+  setSelectedPid,
+  handleRowKeyDown,
+  handleOpenProperties,
+  handleContextMenu,
+  processesLength,
+  loadError,
+  fetchProcesses,
+  isLoading,
+  search,
+}) {
+  return (
+    <Card className="p-0 overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
+      <div
+        ref={tableRef}
+        className="overflow-x-auto max-h-[640px] overflow-y-auto focus:outline-none"
+        tabIndex={0}
+      >
+        <table className="w-full text-left text-xs border-collapse">
+          <ProcessTableHeader
+            sortField={sortField}
+            sortAsc={sortAsc}
+            handleSort={handleSort}
+            handleSortKeyDown={handleSortKeyDown}
+          />
 
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedPriority(contextMenu.process.priority);
-              setContextMenu(null);
-              setPriorityModal(true);
-            }}
-            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
-          >
-            <Sliders className="w-4 h-4 text-slate-500" />
-            Set Priority...
-          </button>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+            {filteredAndSortedProcesses.map((proc) => (
+              <ProcessTableRow
+                key={proc.pid}
+                proc={proc}
+                isSelected={selectedPid === proc.pid}
+                setSelectedPid={setSelectedPid}
+                handleRowKeyDown={handleRowKeyDown}
+                handleOpenProperties={handleOpenProperties}
+                handleContextMenu={handleContextMenu}
+              />
+            ))}
 
-          <button
-            type="button"
-            onClick={() => {
-              const p = contextMenu.process;
-              setContextMenu(null);
-              if ((p?.status || '').toLowerCase().includes('suspend')) {
-                handleResumeProcess(p);
-              } else {
-                handleSuspendProcess(p);
-              }
-            }}
-            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
-          >
-            {(contextMenu.process?.status || '').toLowerCase().includes('suspend') ? (
-              <>
-                <PlayCircle className="w-4 h-4 text-emerald-500" />
-                Resume Process
-              </>
-            ) : (
-              <>
-                <PauseCircle className="w-4 h-4 text-amber-500" />
-                Suspend Process
-              </>
-            )}
-          </button>
+            <ProcessTableEmptyStates
+              processesLength={processesLength}
+              filteredCount={filteredAndSortedProcesses.length}
+              loadError={loadError}
+              fetchProcesses={fetchProcesses}
+              isLoading={isLoading}
+              search={search}
+            />
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
 
-          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+function ProcessContextMenu({
+  contextMenu,
+  setContextMenu,
+  actions,
+}) {
+  if (!contextMenu) return null;
+  const proc = contextMenu.process;
+  const isSuspended = (proc?.status || '').toLowerCase().includes('suspend');
 
-          <button
-            type="button"
-            onClick={() => {
-              handleCopyDetails(contextMenu.process);
-              setContextMenu(null);
-            }}
-            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
-          >
-            <Copy className="w-4 h-4 text-slate-500" />
-            Copy Details
-          </button>
+  return (
+    <div
+      id="process-context-menu"
+      style={{ top: contextMenu.y, left: contextMenu.x }}
+      className="fixed z-50 w-56 rounded-xl bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 shadow-2xl py-1.5 text-xs text-slate-700 dark:text-slate-300 font-sans animate-scaleUp"
+    >
+      <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-slate-500 truncate">
+        {proc.name} (PID {proc.pid})
+      </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              handleOpenProperties(contextMenu.process);
-              setContextMenu(null);
-            }}
-            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2 font-medium"
-          >
-            <Info className="w-4 h-4 text-brand-500" />
-            Properties
-          </button>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          setContextMenu(null);
+          actions.setEndTaskModal(true);
+        }}
+        className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
+      >
+        <XCircle className="w-4 h-4" />
+        End Task
+      </button>
 
-      {/* 6. End Task Confirmation Modal */}
+      <button
+        type="button"
+        onClick={() => {
+          setContextMenu(null);
+          actions.setEndTreeModal(true);
+        }}
+        className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
+      >
+        <GitFork className="w-4 h-4 text-amber-500" />
+        End Process Tree
+      </button>
+
+      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+      <button
+        type="button"
+        disabled={!proc.exe_path}
+        onClick={() => {
+          setContextMenu(null);
+          actions.handleOpenFileLocation(proc);
+        }}
+        className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 disabled:opacity-50 flex items-center gap-2"
+      >
+        <FolderOpen className="w-4 h-4 text-slate-500" />
+        Open File Location
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          actions.setSelectedPriority(proc.priority);
+          setContextMenu(null);
+          actions.setPriorityModal(true);
+        }}
+        className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
+      >
+        <Sliders className="w-4 h-4 text-slate-500" />
+        Set Priority...
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setContextMenu(null);
+          if (isSuspended) {
+            actions.handleResumeProcess(proc);
+          } else {
+            actions.handleSuspendProcess(proc);
+          }
+        }}
+        className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
+      >
+        {isSuspended ? (
+          <>
+            <PlayCircle className="w-4 h-4 text-emerald-500" />
+            Resume Process
+          </>
+        ) : (
+          <>
+            <PauseCircle className="w-4 h-4 text-amber-500" />
+            Suspend Process
+          </>
+        )}
+      </button>
+
+      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+      <button
+        type="button"
+        onClick={() => {
+          actions.handleCopyDetails(proc);
+          setContextMenu(null);
+        }}
+        className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2"
+      >
+        <Copy className="w-4 h-4 text-slate-500" />
+        Copy Details
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          actions.handleOpenProperties(proc);
+          setContextMenu(null);
+        }}
+        className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-surface-800 flex items-center gap-2 font-medium"
+      >
+        <Info className="w-4 h-4 text-brand-500" />
+        Properties
+      </button>
+    </div>
+  );
+}
+
+function ProcessModals({
+  actions,
+  selectedProcess,
+}) {
+  return (
+    <>
+      {/* End Task Confirmation Modal */}
       <Modal
-        isOpen={endTaskModal}
-        onClose={() => setEndTaskModal(false)}
+        isOpen={actions.endTaskModal}
+        onClose={() => actions.setEndTaskModal(false)}
         title="Confirm Process Termination"
         footer={
           <>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setEndTaskModal(false)}
+              onClick={() => actions.setEndTaskModal(false)}
             >
               Cancel
             </Button>
@@ -1114,7 +1049,7 @@ export function Processes() {
               variant="danger"
               size="sm"
               icon={XCircle}
-              onClick={handleConfirmEndTask}
+              onClick={actions.handleConfirmEndTask}
             >
               End Process
             </Button>
@@ -1166,17 +1101,17 @@ export function Processes() {
         </div>
       </Modal>
 
-      {/* 7. End Process Tree Modal */}
+      {/* End Process Tree Modal */}
       <Modal
-        isOpen={endTreeModal}
-        onClose={() => setEndTreeModal(false)}
+        isOpen={actions.endTreeModal}
+        onClose={() => actions.setEndTreeModal(false)}
         title="Confirm Process Tree Termination"
         footer={
           <>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setEndTreeModal(false)}
+              onClick={() => actions.setEndTreeModal(false)}
             >
               Cancel
             </Button>
@@ -1184,7 +1119,7 @@ export function Processes() {
               variant="danger"
               size="sm"
               icon={GitFork}
-              onClick={handleConfirmEndTree}
+              onClick={actions.handleConfirmEndTree}
             >
               End Process Tree
             </Button>
@@ -1210,172 +1145,21 @@ export function Processes() {
         </div>
       </Modal>
 
-      {/* 8. Properties Modal */}
+      {/* Priority Selector Modal */}
       <Modal
-        isOpen={propertiesModal}
-        onClose={() => setPropertiesModal(false)}
-        title={`Process Properties: ${propertiesData?.name || selectedProcess?.name}`}
-        footer={
-          <div className="flex items-center justify-between w-full">
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={FolderOpen}
-              disabled={!propertiesData?.exe_path}
-              onClick={() => handleOpenFileLocation(propertiesData)}
-            >
-              Open Location
-            </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={Copy}
-                onClick={() => handleCopyDetails(propertiesData)}
-              >
-                Copy Details
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setPropertiesModal(false)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        }
-      >
-        {propertiesLoading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-2">
-            <RefreshCw className="w-6 h-6 animate-spin text-brand-600" />
-            <span className="text-xs text-slate-500">Querying process metadata...</span>
-          </div>
-        ) : propertiesData ? (
-          <div className="space-y-4">
-            {/* General Section */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 space-y-2">
-              <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-brand-600" />
-                General Information
-              </h4>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-mono text-[11px]">
-                <div>
-                  <span className="text-slate-500 font-sans">Name: </span>
-                  <span className="text-slate-900 dark:text-slate-100 font-bold">
-                    {propertiesData.name}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">PID: </span>
-                  <span>{propertiesData.pid}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Parent PID: </span>
-                  <span>
-                    {propertiesData.parent_pid != null
-                      ? propertiesData.parent_pid
-                      : 'Unavailable'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Category: </span>
-                  <span className="capitalize">{propertiesData.category}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Status: </span>
-                  <span className="capitalize">{propertiesData.status}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Scheduling: </span>
-                  <span>{propertiesData.priority}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Performance & Threads */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 space-y-2">
-              <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5 text-brand-600" />
-                Performance & Threads
-              </h4>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-mono text-[11px]">
-                <div>
-                  <span className="text-slate-500 font-sans">CPU Usage: </span>
-                  <span className="font-bold text-brand-600">
-                    {(Number(propertiesData.cpu_usage) || 0).toFixed(1)}%
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Active Threads: </span>
-                  <span>
-                    {propertiesData.thread_count != null
-                      ? propertiesData.thread_count
-                      : 'Unavailable'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Memory (Working Set): </span>
-                  <span>{formatBytes(propertiesData.memory_bytes || 0)}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Virtual Memory: </span>
-                  <span>{formatBytes(propertiesData.virtual_memory_bytes || 0)}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Disk Read: </span>
-                  <span>{formatBytes(propertiesData.disk_read_bytes || 0)}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans">Disk Written: </span>
-                  <span>{formatBytes(propertiesData.disk_written_bytes || 0)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Executable Path & Command Line */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 space-y-2">
-              <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                <FolderOpen className="w-3.5 h-3.5 text-brand-600" />
-                Binary Path & Arguments
-              </h4>
-              <div className="space-y-1.5 text-[11px]">
-                <div>
-                  <span className="text-slate-500">Executable Location:</span>
-                  <div className="p-2 rounded bg-white dark:bg-surface-800 border border-slate-200 dark:border-slate-700/80 font-mono break-all text-slate-800 dark:text-slate-200 mt-0.5">
-                    {propertiesData.exe_path || 'Unavailable (System Protected)'}
-                  </div>
-                </div>
-
-                {propertiesData.command_line && (
-                  <div>
-                    <span className="text-slate-500">Command Line:</span>
-                    <div className="p-2 rounded bg-white dark:bg-surface-800 border border-slate-200 dark:border-slate-700/80 font-mono break-all text-slate-800 dark:text-slate-200 mt-0.5 max-h-24 overflow-y-auto">
-                      {propertiesData.command_line}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </Modal>
-
-      {/* 9. Priority Selector Modal */}
-      <Modal
-        isOpen={priorityModal}
-        onClose={() => setPriorityModal(false)}
+        isOpen={actions.priorityModal}
+        onClose={() => actions.setPriorityModal(false)}
         title={`Set Priority: ${selectedProcess?.name}`}
         footer={
           <>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setPriorityModal(false)}
+              onClick={() => actions.setPriorityModal(false)}
             >
               Cancel
             </Button>
-            <Button variant="primary" size="sm" onClick={handleApplyPriority}>
+            <Button variant="primary" size="sm" onClick={actions.handleApplyPriority}>
               Apply Priority
             </Button>
           </>
@@ -1391,9 +1175,9 @@ export function Processes() {
                 <button
                   key={prio}
                   type="button"
-                  onClick={() => setSelectedPriority(prio)}
+                  onClick={() => actions.setSelectedPriority(prio)}
                   className={`p-2.5 rounded-lg border text-xs font-semibold transition ${
-                    selectedPriority === prio
+                    actions.selectedPriority === prio
                       ? 'bg-brand-600 text-white border-brand-500 shadow-sm'
                       : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 dark:bg-surface-900 dark:text-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
                   }`}
@@ -1405,7 +1189,433 @@ export function Processes() {
           </div>
         </div>
       </Modal>
+    </>
+  );
+}
+
+function ProcessGeneralInfoSection({ data }) {
+  return (
+    <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 space-y-2">
+      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+        <Terminal className="w-3.5 h-3.5 text-brand-600" />
+        General Information
+      </h4>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-mono text-[11px]">
+        <div>
+          <span className="text-slate-500 font-sans">Name: </span>
+          <span className="text-slate-900 dark:text-slate-100 font-bold">
+            {data.name}
+          </span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">PID: </span>
+          <span>{data.pid}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Parent PID: </span>
+          <span>
+            {data.parent_pid != null ? data.parent_pid : 'Unavailable'}
+          </span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Category: </span>
+          <span className="capitalize">{data.category}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Status: </span>
+          <span className="capitalize">{data.status}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Scheduling: </span>
+          <span>{data.priority}</span>
+        </div>
+      </div>
     </div>
   );
 }
+
+function ProcessPerformanceSection({ data }) {
+  return (
+    <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 space-y-2">
+      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+        <Cpu className="w-3.5 h-3.5 text-brand-600" />
+        Performance & Threads
+      </h4>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-mono text-[11px]">
+        <div>
+          <span className="text-slate-500 font-sans">CPU Usage: </span>
+          <span className="font-bold text-brand-600">
+            {(Number(data.cpu_usage) || 0).toFixed(1)}%
+          </span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Active Threads: </span>
+          <span>
+            {data.thread_count != null ? data.thread_count : 'Unavailable'}
+          </span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Memory (Working Set): </span>
+          <span>{formatBytes(data.memory_bytes || 0)}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Virtual Memory: </span>
+          <span>{formatBytes(data.virtual_memory_bytes || 0)}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Disk Read: </span>
+          <span>{formatBytes(data.disk_read_bytes || 0)}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 font-sans">Disk Written: </span>
+          <span>{formatBytes(data.disk_written_bytes || 0)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProcessBinarySection({ data }) {
+  return (
+    <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-900 border border-slate-200 dark:border-slate-800 space-y-2">
+      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+        <FolderOpen className="w-3.5 h-3.5 text-brand-600" />
+        Binary Path & Arguments
+      </h4>
+      <div className="space-y-1.5 text-[11px]">
+        <div>
+          <span className="text-slate-500">Executable Location:</span>
+          <div className="p-2 rounded bg-white dark:bg-surface-800 border border-slate-200 dark:border-slate-700/80 font-mono break-all text-slate-800 dark:text-slate-200 mt-0.5">
+            {data.exe_path || 'Unavailable (System Protected)'}
+          </div>
+        </div>
+
+        {data.command_line && (
+          <div>
+            <span className="text-slate-500">Command Line:</span>
+            <div className="p-2 rounded bg-white dark:bg-surface-800 border border-slate-200 dark:border-slate-700/80 font-mono break-all text-slate-800 dark:text-slate-200 mt-0.5 max-h-24 overflow-y-auto">
+              {data.command_line}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProcessPropertiesModal({
+  actions,
+  selectedProcess,
+}) {
+  const { propertiesModal, setPropertiesModal, propertiesData, propertiesLoading } = actions;
+  const modalTitle = `Process Properties: ${propertiesData?.name || selectedProcess?.name || 'Process'}`;
+
+  return (
+    <Modal
+      isOpen={propertiesModal}
+      onClose={() => setPropertiesModal(false)}
+      title={modalTitle}
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={FolderOpen}
+            disabled={!propertiesData?.exe_path}
+            onClick={() => actions.handleOpenFileLocation(propertiesData)}
+          >
+            Open Location
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={Copy}
+              onClick={() => actions.handleCopyDetails(propertiesData)}
+            >
+              Copy Details
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setPropertiesModal(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      {propertiesLoading && (
+        <div className="py-12 flex flex-col items-center justify-center gap-2">
+          <RefreshCw className="w-6 h-6 animate-spin text-brand-600" />
+          <span className="text-xs text-slate-500">Querying process metadata...</span>
+        </div>
+      )}
+
+      {!propertiesLoading && propertiesData && (
+        <div className="space-y-4">
+          <ProcessGeneralInfoSection data={propertiesData} />
+          <ProcessPerformanceSection data={propertiesData} />
+          <ProcessBinarySection data={propertiesData} />
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+export function Processes() {
+  const [processes, setProcesses] = useState([]);
+  const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all'); // 'all' | 'apps' | 'background' | 'windows'
+  const [sortField, setSortField] = useState('memory_bytes'); // 'name' | 'pid' | 'cpu_usage' | 'memory_bytes'
+  const [sortAsc, setSortAsc] = useState(false);
+  const [selectedPid, setSelectedPid] = useState(null);
+  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null); // { x, y, process }
+
+  const isFetchingRef = useRef(false);
+  const tableRef = useRef(null);
+
+  // Selected process object
+  const selectedProcess = useMemo(() => {
+    if (selectedPid == null) return null;
+    return (processes || []).find((p) => p && p.pid === selectedPid) || null;
+  }, [processes, selectedPid]);
+
+  // Fetch process list from native Rust backend
+  const fetchProcesses = useCallback(async (manual = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    if (manual) setIsLoading(true);
+
+    try {
+      const list = await api.getProcesses();
+      setProcesses(list || []);
+      setLoadError(null);
+    } catch (err) {
+      console.error('Failed to enumerate processes:', err);
+      const handled = handleApplicationError(err, 'general');
+      const isPermission =
+        String(err).toLowerCase().includes('access denied') ||
+        String(err).toLowerCase().includes('permission');
+      setLoadError({
+        message: handled.message,
+        referenceId: handled.referenceId,
+        isPermission,
+      });
+    } finally {
+      isFetchingRef.current = false;
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Action handlers hook
+  const actions = useProcessActions({ selectedProcess, setSelectedPid, fetchProcesses });
+
+  // Sort handlers
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortField(field);
+      setSortAsc(false);
+    }
+  };
+
+  const handleSortKeyDown = (e, field) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleSort(field);
+    }
+  };
+
+  const handleRowKeyDown = (e, pid) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setSelectedPid(pid);
+    }
+  };
+
+  // Filter & sort logic
+  const filteredAndSortedProcesses = useMemo(() => {
+    const q = (search || '').trim().toLowerCase();
+
+    return (processes || [])
+      .filter((p) => {
+        if (!p) return false;
+        if (filterCategory !== 'all' && p.category !== filterCategory) return false;
+        if (q) {
+          const matchesName = (p.name || '').toLowerCase().includes(q);
+          const matchesPid = (p.pid != null ? p.pid.toString() : '').includes(q);
+          const matchesPath = (p.exe_path || '').toLowerCase().includes(q);
+          if (!matchesName && !matchesPid && !matchesPath) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        let valA = a?.[sortField];
+        let valB = b?.[sortField];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
+      });
+  }, [processes, search, filterCategory, sortField, sortAsc]);
+
+  // Aggregate stats
+  const stats = useMemo(() => computeProcessStats(processes), [processes]);
+
+  // Context Menu opener
+  const handleContextMenu = (e, proc) => {
+    e.preventDefault();
+    setSelectedPid(proc.pid);
+    const menuWidth = 220;
+    const menuHeight = 280;
+    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 10);
+    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 10);
+    setContextMenu({ x, y, process: proc });
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchProcesses(true);
+  }, [fetchProcesses]);
+
+  // Polling with auto-refresh pause/resume support
+  useEffect(() => {
+    if (!isAutoRefresh) return;
+    const interval = setInterval(() => {
+      fetchProcesses(false);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [isAutoRefresh, fetchProcesses]);
+
+  // Close context menu on outside click or scroll
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (contextMenu && !e.target.closest('#process-context-menu')) {
+        setContextMenu(null);
+      }
+    };
+    window.addEventListener('click', handleOutsideClick);
+    window.addEventListener('contextmenu', handleOutsideClick);
+    return () => {
+      window.removeEventListener('click', handleOutsideClick);
+      window.removeEventListener('contextmenu', handleOutsideClick);
+    };
+  }, [contextMenu]);
+
+  // Keyboard navigation across table
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+      if (e.key === 'Escape') {
+        setSelectedPid(null);
+        setContextMenu(null);
+        return;
+      }
+
+      if (filteredAndSortedProcesses.length === 0) return;
+
+      const currentIndex = filteredAndSortedProcesses.findIndex(
+        (p) => p.pid === selectedPid
+      );
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex =
+          currentIndex < filteredAndSortedProcesses.length - 1
+            ? currentIndex + 1
+            : 0;
+        setSelectedPid(filteredAndSortedProcesses[nextIndex].pid);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex =
+          currentIndex > 0
+            ? currentIndex - 1
+            : filteredAndSortedProcesses.length - 1;
+        setSelectedPid(filteredAndSortedProcesses[prevIndex].pid);
+      } else if (e.key === 'Delete' && selectedProcess) {
+        e.preventDefault();
+        actions.setEndTaskModal(true);
+      } else if (e.key === 'Enter' && selectedProcess) {
+        e.preventDefault();
+        actions.handleOpenProperties(selectedProcess);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPid, selectedProcess, filteredAndSortedProcesses, actions]);
+
+  return (
+    <div className="space-y-4 animate-fadeIn select-none font-sans pb-12">
+      <ProcessHeaderToolbar
+        stats={stats}
+        search={search}
+        setSearch={setSearch}
+        filterCategory={filterCategory}
+        setFilterCategory={setFilterCategory}
+        isAutoRefresh={isAutoRefresh}
+        setIsAutoRefresh={setIsAutoRefresh}
+        fetchProcesses={fetchProcesses}
+        isLoading={isLoading}
+      />
+
+      <ProcessActionBar
+        selectedProcess={selectedProcess}
+        setSelectedPid={setSelectedPid}
+        actions={actions}
+      />
+
+      <ProcessNotification
+        statusNotification={actions.statusNotification}
+        setStatusNotification={actions.setStatusNotification}
+      />
+
+      <ProcessTable
+        tableRef={tableRef}
+        sortField={sortField}
+        sortAsc={sortAsc}
+        handleSort={handleSort}
+        handleSortKeyDown={handleSortKeyDown}
+        filteredAndSortedProcesses={filteredAndSortedProcesses}
+        selectedPid={selectedPid}
+        setSelectedPid={setSelectedPid}
+        handleRowKeyDown={handleRowKeyDown}
+        handleOpenProperties={actions.handleOpenProperties}
+        handleContextMenu={handleContextMenu}
+        processesLength={processes.length}
+        loadError={loadError}
+        fetchProcesses={fetchProcesses}
+        isLoading={isLoading}
+        search={search}
+      />
+
+      <ProcessContextMenu
+        contextMenu={contextMenu}
+        setContextMenu={setContextMenu}
+        actions={actions}
+      />
+
+      <ProcessModals
+        actions={actions}
+        selectedProcess={selectedProcess}
+      />
+
+      <ProcessPropertiesModal
+        actions={actions}
+        selectedProcess={selectedProcess}
+      />
+    </div>
+  );
+}
+
 export default Processes;

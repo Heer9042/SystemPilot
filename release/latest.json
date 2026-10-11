@@ -1,8 +1,8 @@
 {
-    "version":  "0.0.1",
-    "downloadUrl":  "https://github.com/Heer9042/SystemPilot/releases/download/v0.0.1/SystemPilot-Setup.exe",
-    "sha256":  "7412D6AEB4C740C4B5FEDCA467D2FCB3E50952898A2C1A9F4A07A66CC575C954",
-    "releaseNotes":  "Official release v0.0.1 - Performance optimizations, security updates, and bug fixes.",
+    "version":  "0.0.2",
+    "downloadUrl":  "https://github.com/Heer9042/SystemPilot/releases/download/v0.0.2/SystemPilot-Setup.exe",
+    "sha256":  "5C7D4831DBFBD068708BC41C70E27F024D023CC5A11ED16D42A6884B79FF661A",
+    "releaseNotes":  "Official release v0.0.2 - Performance optimizations, security updates, and bug fixes.",
     "mandatory":  false,
     "publishedAt":  "2026-10-11"
 }

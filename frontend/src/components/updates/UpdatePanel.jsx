@@ -97,7 +97,10 @@ export function UpdatePanel({
               <Button variant="secondary" size="sm" onClick={() => openReleaseNotes(latestRelease.htmlUrl)}>
                 <ExternalLink className="w-3.5 h-3.5 mr-1" /> Notes
               </Button>
-              <Button variant="primary" size="sm" onClick={downloadAndInstallUpdate}>
+              <Button variant="primary" size="sm" onClick={() => {
+                openModal();
+                downloadAndInstallUpdate();
+              }}>
                 <Download className="w-3.5 h-3.5 mr-1" /> Update Now
               </Button>
             </>
@@ -107,7 +110,10 @@ export function UpdatePanel({
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => checkForUpdates({ isManual: true })}
+              onClick={() => {
+                openModal();
+                checkForUpdates({ isManual: true });
+              }}
               disabled={status === StatusEnum.CHECKING}
               className="flex items-center gap-1.5 w-full sm:w-auto"
             >

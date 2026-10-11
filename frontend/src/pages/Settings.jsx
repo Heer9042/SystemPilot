@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
+import { Badge } from '../components/ui/Badge';
 import { api } from '../services/tauriApi';
 import { useUpdater } from '../hooks/useUpdater';
 import { UpdatePanel } from '../components/updates';
@@ -14,141 +15,325 @@ import {
   Moon,
   Sun,
   CheckCircle2,
+  Sparkles,
+  RefreshCw,
+  SlidersHorizontal,
+  Activity,
+  Layers,
+  Laptop,
+  HardDrive,
+  Cpu,
+  RotateCcw,
+  Check,
+  Zap,
+  Info,
+  Clock,
+  Download,
+  AlertTriangle,
 } from 'lucide-react';
 
-function SettingsAppearanceCard({ theme, toggleTheme, refreshInterval, onUpdateInterval }) {
+// ============================================================================
+// 1. APPEARANCE & DISPLAY MODE CARD
+// ============================================================================
+function SettingsAppearanceCard({ theme, toggleTheme }) {
   return (
-    <Card className="space-y-3">
-      <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <Moon className="w-4 h-4 text-brand-500 dark:text-brand-400" />
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Appearance & System Monitoring</h3>
+    <Card className="p-5 space-y-4 border-slate-200/80 dark:border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20">
+            <Moon className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Appearance & Theme</h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Choose your preferred visual presentation style</p>
+          </div>
+        </div>
+        <Badge variant={theme === 'dark' ? 'brand' : 'neutral'} size="xs">
+          {theme === 'dark' ? 'Dark Mode Active' : 'Light Mode Active'}
+        </Badge>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 py-2 border-b border-slate-200 dark:border-slate-800/60">
-        <div>
-          <span className="text-xs font-semibold text-slate-900 dark:text-slate-200 block">Theme Mode</span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">Switch between Dark and Light UI styles</span>
-        </div>
-        <Button variant="secondary" size="sm" onClick={toggleTheme} className="self-start sm:self-auto flex items-center gap-1.5">
-          {theme === 'dark' ? <Moon className="w-3.5 h-3.5 text-brand-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
-          <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-        </Button>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 py-2">
-        <div>
-          <span className="text-xs font-semibold text-slate-900 dark:text-slate-200 block">Monitoring Refresh Interval</span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">Adjust update frequency to balance responsiveness and system resource usage</span>
-        </div>
-        <select
-          aria-label="Monitoring Refresh Interval"
-          value={refreshInterval}
-          onChange={(e) => onUpdateInterval(e.target.value)}
-          className="bg-white dark:bg-surface-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-brand-500 self-start sm:self-auto w-full sm:w-auto font-mono"
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        {/* Dark Mode Card */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            if (theme !== 'dark') toggleTheme();
+          }}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && theme !== 'dark') toggleTheme();
+          }}
+          className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+            theme === 'dark'
+              ? 'border-brand-500 bg-brand-500/5 shadow-md shadow-brand-500/10'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-surface-900/40'
+          }`}
         >
-          <option value="500">500 ms (High Precision)</option>
-          <option value="1000">1000 ms (Recommended)</option>
-          <option value="2000">2000 ms (Low CPU)</option>
-          <option value="5000">5000 ms (Battery Saver)</option>
-        </select>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-brand-400">
+                <Moon className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Dark Mode</span>
+                <span className="text-[10px] text-slate-500">Curated slate OLED theme</span>
+              </div>
+            </div>
+            {theme === 'dark' && (
+              <div className="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center">
+                <Check className="w-3 h-3 stroke-[3]" />
+              </div>
+            )}
+          </div>
+          <div className="h-6 w-full rounded bg-slate-950 border border-slate-800 flex items-center px-2 gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <div className="w-12 h-1.5 rounded-full bg-slate-800 ml-auto" />
+          </div>
+        </div>
+
+        {/* Light Mode Card */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            if (theme !== 'light') toggleTheme();
+          }}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && theme !== 'light') toggleTheme();
+          }}
+          className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+            theme === 'light'
+              ? 'border-brand-500 bg-brand-500/5 shadow-md shadow-brand-500/10'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-surface-900/40'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500">
+                <Sun className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Light Mode</span>
+                <span className="text-[10px] text-slate-500">Crisp high-contrast day theme</span>
+              </div>
+            </div>
+            {theme === 'light' && (
+              <div className="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center">
+                <Check className="w-3 h-3 stroke-[3]" />
+              </div>
+            )}
+          </div>
+          <div className="h-6 w-full rounded bg-slate-100 border border-slate-300 flex items-center px-2 gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-rose-400" />
+            <div className="w-2 h-2 rounded-full bg-amber-400" />
+            <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            <div className="w-12 h-1.5 rounded-full bg-slate-300 ml-auto" />
+          </div>
+        </div>
       </div>
     </Card>
   );
 }
 
+// ============================================================================
+// 2. MONITORING TELEMETRY REFRESH INTERVAL CARD
+// ============================================================================
+function SettingsMonitoringCard({ refreshInterval, onUpdateInterval }) {
+  const intervals = [
+    { value: '500', label: '500 ms', desc: 'High Precision (Realtime response)', badge: 'Higher CPU' },
+    { value: '1000', label: '1000 ms', desc: 'Balanced (Recommended default)', badge: 'Optimal' },
+    { value: '2000', label: '2000 ms', desc: 'Low Overhead (Resource friendly)', badge: 'Low CPU' },
+    { value: '5000', label: '5000 ms', desc: 'Battery Saver (Background polling)', badge: 'Minimal' },
+  ];
+
+  return (
+    <Card className="p-5 space-y-4 border-slate-200/80 dark:border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/20">
+            <Activity className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Telemetry Refresh Rate</h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Balance sensor responsiveness against CPU cycles</p>
+          </div>
+        </div>
+        <span className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400">
+          {refreshInterval} ms
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {intervals.map((item) => {
+          const isSelected = String(refreshInterval) === item.value;
+          return (
+            <div
+              key={item.value}
+              role="button"
+              tabIndex={0}
+              onClick={() => onUpdateInterval(item.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') onUpdateInterval(item.value);
+              }}
+              className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1 text-xs ${
+                isSelected
+                  ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/15 text-slate-900 dark:text-slate-100 font-bold shadow-sm'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-900/50 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono">{item.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
+                  isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 dark:bg-surface-800 text-slate-500'
+                }`}>
+                  {item.badge}
+                </span>
+              </div>
+              <p className="text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">{item.desc}</p>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// ============================================================================
+// 3. SYSTEM TRAY & BOOT INTEGRATION CARD
+// ============================================================================
 function SettingsSystemTrayCard({ settings, onUpdate }) {
   return (
-    <Card className="space-y-3">
-      <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">System Tray & Startup</h3>
+    <Card className="p-5 space-y-4 border-slate-200/80 dark:border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
+            <Layers className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">System Tray & Boot Integration</h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Windows background residency and startup behavior</p>
+          </div>
+        </div>
       </div>
 
-      <Toggle
-        enabled={settings.minimize_to_tray === 'true'}
-        onChange={(val) => onUpdate('minimize_to_tray', val)}
-        label="Minimize to System Tray"
-        description="Keep monitoring actively in background when minimized"
-      />
+      <div className="space-y-3 divide-y divide-slate-100 dark:divide-slate-800/80">
+        <div className="pt-1">
+          <Toggle
+            enabled={settings.minimize_to_tray === 'true'}
+            onChange={(val) => onUpdate('minimize_to_tray', val)}
+            label="Minimize to System Tray"
+            description="Hide window to notification area while actively monitoring hardware in the background"
+          />
+        </div>
 
-      <Toggle
-        enabled={settings.close_to_tray === 'true'}
-        onChange={(val) => onUpdate('close_to_tray', val)}
-        label="Close Window to Tray"
-        description="Closing window minimizes rather than terminating"
-      />
+        <div className="pt-3">
+          <Toggle
+            enabled={settings.close_to_tray === 'true'}
+            onChange={(val) => onUpdate('close_to_tray', val)}
+            label="Close Button Minimizes to Tray"
+            description="Clicking the window close (X) button sends SystemPilot to the tray rather than terminating"
+          />
+        </div>
 
-      <Toggle
-        enabled={settings.start_with_windows === 'true'}
-        onChange={(val) => onUpdate('start_with_windows', val)}
-        label="Start with Windows"
-        description="Launch SystemPilot automatically on Windows logon"
-      />
+        <div className="pt-3">
+          <Toggle
+            enabled={settings.start_with_windows === 'true'}
+            onChange={(val) => onUpdate('start_with_windows', val)}
+            label="Launch Automatically with Windows"
+            description="Automatically start SystemPilot in the background when logging into your Windows user account"
+          />
+        </div>
+      </div>
     </Card>
   );
 }
 
+// ============================================================================
+// 4. SMART ALERT THRESHOLDS CARD
+// ============================================================================
 function SettingsAlertsCard({ settings, onUpdate }) {
   return (
-    <Card className="space-y-3 lg:col-span-2">
-      <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <Bell className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Smart Alert Thresholds</h3>
+    <Card className="p-5 space-y-4 border-slate-200/80 dark:border-slate-800 lg:col-span-2">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+            <Bell className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Smart Alert Thresholds</h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Configure proactive notifications for critical thermal and resource bottlenecks</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-surface-850 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between gap-3">
           <Toggle
             enabled={settings.notify_ram_threshold === 'true'}
             onChange={(val) => onUpdate('notify_ram_threshold', val)}
             label="High RAM Warning"
-            description="Notify when RAM usage exceeds 90%"
+            description="Alert when physical memory consumption exceeds 90%"
           />
+          <Badge variant={settings.notify_ram_threshold === 'true' ? 'warning' : 'neutral'} size="xs" className="w-fit">
+            Threshold: &gt; 90%
+          </Badge>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800">
+        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-surface-850 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between gap-3">
           <Toggle
             enabled={settings.notify_cpu_temp === 'true'}
             onChange={(val) => onUpdate('notify_cpu_temp', val)}
-            label="High CPU Temperature"
-            description="Notify if CPU thermal limit spikes"
+            label="CPU Thermal Alert"
+            description="Notify immediately if CPU junction temperature spikes near thermal limits"
           />
+          <Badge variant={settings.notify_cpu_temp === 'true' ? 'danger' : 'neutral'} size="xs" className="w-fit">
+            Threshold: &gt; 85°C
+          </Badge>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 sm:col-span-2 lg:col-span-1">
+        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-surface-850 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between gap-3">
           <Toggle
             enabled={settings.notify_disk_low === 'true'}
             onChange={(val) => onUpdate('notify_disk_low', val)}
-            label="Low Disk Space Alert"
-            description="Notify when storage partition < 10% free"
+            label="Low Storage Alert"
+            description="Warn when primary NVMe/SSD system drive has under 10% capacity left"
           />
+          <Badge variant={settings.notify_disk_low === 'true' ? 'warning' : 'neutral'} size="xs" className="w-fit">
+            Threshold: &lt; 10% Free
+          </Badge>
         </div>
       </div>
     </Card>
   );
 }
 
+// ============================================================================
+// 5. WINDOWS PRIVILEGE & PERMISSION SCOPE CARD
+// ============================================================================
 function SettingsPrivilegeCard({ privilegeInfo, onElevate, onOpenPermissions }) {
   return (
-    <Card className="space-y-3 lg:col-span-2 border-slate-200 dark:border-slate-800">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+    <Card className="p-5 space-y-4 border-slate-200/80 dark:border-slate-800 lg:col-span-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-brand-500" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Windows Permissions & Privilege Scope</h3>
+          <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+            <Shield className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Windows Permissions & Privilege Scope</h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">User Account Control (UAC) boundary & least-privilege enforcement</p>
+          </div>
         </div>
-        <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border self-start sm:self-auto flex items-center gap-1.5 ${
-          privilegeInfo?.is_elevated
-            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40'
-            : 'bg-slate-100 dark:bg-surface-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-        }`}>
-          {privilegeInfo?.is_elevated && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-          {privilegeInfo?.execution_level || 'Standard User (asInvoker)'}
-        </span>
+        <Badge variant={privilegeInfo?.is_elevated ? 'success' : 'neutral'} size="xs" className="self-start sm:self-auto">
+          {privilegeInfo?.is_elevated ? 'UAC Elevated (Admin)' : 'Standard User (Least Privilege)'}
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="text-slate-500 dark:text-slate-400 font-medium">Installation Scope</span>
+        <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-surface-850 border border-slate-200/80 dark:border-slate-800 space-y-1">
+          <span className="text-slate-400 font-semibold text-[10px] uppercase">Installation Scope</span>
           <p className="font-semibold text-slate-800 dark:text-slate-200">
             {privilegeInfo?.installation_scope || 'Per-User (%LOCALAPPDATA%)'}
           </p>
@@ -159,27 +344,27 @@ function SettingsPrivilegeCard({ privilegeInfo, onElevate, onOpenPermissions }) 
           </p>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-surface-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="text-slate-500 dark:text-slate-400 font-medium">Operating Privileges</span>
+        <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-surface-850 border border-slate-200/80 dark:border-slate-800 space-y-1">
+          <span className="text-slate-400 font-semibold text-[10px] uppercase">Operating Privileges</span>
           <p className="font-semibold text-slate-800 dark:text-slate-200">
             {privilegeInfo?.is_elevated ? 'Administrator Privileges Active' : 'Principle of Least Privilege'}
           </p>
           <p className="text-[11px] text-slate-500">
             {privilegeInfo?.is_elevated
               ? 'Can manage system services, machine startup, and protected processes.'
-              : 'Safely runs as standard user. Advanced commands request UAC only on-demand.'}
+              : 'Safely runs as standard user. Privileged actions prompt for UAC on demand.'}
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80">
         {!privilegeInfo?.is_elevated && (
           <Button
             variant="primary"
             size="sm"
             icon={Shield}
             onClick={onElevate}
-            className="shadow-sm"
+            className="text-xs"
           >
             Run as Administrator (Request Elevation)
           </Button>
@@ -189,6 +374,7 @@ function SettingsPrivilegeCard({ privilegeInfo, onElevate, onOpenPermissions }) 
           size="sm"
           icon={ExternalLink}
           onClick={onOpenPermissions}
+          className="text-xs"
         >
           View Permissions Disclosure (PERMISSIONS.txt)
         </Button>
@@ -197,80 +383,71 @@ function SettingsPrivilegeCard({ privilegeInfo, onElevate, onOpenPermissions }) 
   );
 }
 
+// ============================================================================
+// 6. ABOUT & LEGAL INFORMATION CARD
+// ============================================================================
 function SettingsAboutCard({ currentVersion, onOpenReleaseNotes }) {
   return (
-    <Card className="space-y-4 lg:col-span-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-surface-950/60">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800/80">
+    <Card className="p-5 space-y-4 border-slate-200/80 dark:border-slate-800 lg:col-span-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/30 flex items-center justify-center text-brand-600 dark:text-brand-400 flex-shrink-0">
-            <Shield className="w-4.5 h-4.5" />
+          <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/30 flex items-center justify-center text-brand-600 dark:text-brand-400 shrink-0">
+            <Shield className="w-5 h-5" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               SystemPilot <span className="text-xs font-mono font-normal text-slate-500 dark:text-slate-400">v{currentVersion}</span>
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Windows System Monitoring & Performance Suite · Native Desktop Utility
+              Universal Windows System Management Platform · React + Rust Architecture
             </p>
           </div>
         </div>
-        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+        <span className="text-[11px] text-slate-400 font-mono">
           © 2026 SystemPilot Contributors
         </span>
       </div>
 
       <div className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed space-y-2">
         <p>
-          SystemPilot is an open-source, local-first Windows performance utility distributed under the{' '}
-          <strong className="text-slate-900 dark:text-slate-200 font-semibold">MIT License</strong>. All system diagnostics, process management,
-          and memory optimizations remain strictly on your local device.
+          SystemPilot is an open-source, local-first Windows performance and management platform distributed under the{' '}
+          <strong className="text-slate-900 dark:text-slate-200 font-semibold">MIT License</strong>. All hardware telemetry, diagnostics, and management operations execute strictly on your local PC.
         </p>
         <p className="text-[11px] text-slate-400 dark:text-slate-500">
-          <em>Disclaimer: Windows and Windows Defender are trademarks of Microsoft Corporation. SystemPilot is an independent utility and is not affiliated with or endorsed by Microsoft Corporation.</em>
+          <em>Disclaimer: Windows, Windows Defender, and Microsoft Edge are trademarks of Microsoft Corporation. SystemPilot is an independent utility and is not affiliated with or endorsed by Microsoft.</em>
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-xs">
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80 text-xs">
         <button
           type="button"
           onClick={() => onOpenReleaseNotes('https://github.com/Heer9042/SystemPilot')}
-          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-900 dark:hover:bg-surface-850 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 flex items-center gap-1.5 transition-colors font-medium"
+          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-850 dark:hover:bg-surface-800 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors font-medium text-xs"
         >
           <ExternalLink className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" /> Project Homepage
         </button>
         <button
           type="button"
           onClick={() => onOpenReleaseNotes('https://github.com/Heer9042/SystemPilot/blob/main/LICENSE')}
-          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-900 dark:hover:bg-surface-850 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 flex items-center gap-1.5 transition-colors font-medium"
+          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-850 dark:hover:bg-surface-800 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors font-medium text-xs"
         >
-          <ExternalLink className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> License (MIT)
-        </button>
-        <button
-          type="button"
-          onClick={() => onOpenReleaseNotes('https://github.com/Heer9042/SystemPilot/blob/main/docs/THIRD_PARTY_NOTICES.md')}
-          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-900 dark:hover:bg-surface-850 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 flex items-center gap-1.5 transition-colors font-medium"
-        >
-          <ExternalLink className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" /> Third-Party Notices
-        </button>
-        <button
-          type="button"
-          onClick={() => onOpenReleaseNotes('https://github.com/Heer9042/SystemPilot/blob/main/docs/PRIVACY.md')}
-          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-900 dark:hover:bg-surface-850 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 flex items-center gap-1.5 transition-colors font-medium"
-        >
-          <ExternalLink className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Privacy Policy
+          <ExternalLink className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> MIT License
         </button>
         <button
           type="button"
           onClick={() => onOpenReleaseNotes('https://github.com/Heer9042/SystemPilot/blob/main/SECURITY.md')}
-          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-900 dark:hover:bg-surface-850 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 flex items-center gap-1.5 transition-colors font-medium"
+          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-surface-850 dark:hover:bg-surface-800 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors font-medium text-xs"
         >
-          <ExternalLink className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Security Policy
+          <ExternalLink className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Security Policy
         </button>
       </div>
     </Card>
   );
 }
 
+// ============================================================================
+// 7. MAIN SETTINGS VIEW
+// ============================================================================
 export function Settings({ theme, toggleTheme }) {
   const [activeTab, setActiveTab] = useState('all');
   const [settings, setSettings] = useState({
@@ -288,6 +465,7 @@ export function Settings({ theme, toggleTheme }) {
     start_with_windows: 'false',
   });
   const [savedMessage, setSavedMessage] = useState(false);
+  const [privilegeInfo, setPrivilegeInfo] = useState(null);
 
   const {
     status,
@@ -308,10 +486,14 @@ export function Settings({ theme, toggleTheme }) {
   useEffect(() => {
     async function load() {
       try {
-        const data = await api.getSettings();
+        const [data, priv] = await Promise.all([
+          api.getSettings(),
+          api.getPrivilegeStatus(),
+        ]);
         if (data) setSettings(data);
+        if (priv) setPrivilegeInfo(priv);
       } catch (e) {
-        console.error(e);
+        console.error('Failed to load settings or privileges:', e);
       }
     }
     load();
@@ -323,25 +505,11 @@ export function Settings({ theme, toggleTheme }) {
     try {
       await api.setSetting(key, String(val));
       setSavedMessage(true);
-      setTimeout(() => setSavedMessage(false), 2000);
+      setTimeout(() => setSavedMessage(false), 2200);
     } catch (e) {
-      console.error(e);
+      console.error('Failed to persist setting:', e);
     }
   };
-
-  const [privilegeInfo, setPrivilegeInfo] = useState(null);
-
-  useEffect(() => {
-    async function loadPrivileges() {
-      try {
-        const priv = await api.getPrivilegeStatus();
-        if (priv) setPrivilegeInfo(priv);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    loadPrivileges();
-  }, []);
 
   const handleElevate = async () => {
     try {
@@ -364,85 +532,134 @@ export function Settings({ theme, toggleTheme }) {
     : 'Not checked yet this session';
 
   const tabs = [
-    { id: 'all', label: 'All Settings' },
-    { id: 'general', label: 'Appearance & Polling' },
-    { id: 'system', label: 'System Tray & Boot' },
-    { id: 'permissions', label: 'Privileges & Scope' },
-    { id: 'updates', label: 'Updates & Channel' },
-    { id: 'alerts', label: 'Alerts & Thresholds' },
-    { id: 'about', label: 'About & Legal' },
+    { id: 'all', label: 'All Settings', icon: SlidersHorizontal },
+    { id: 'updates', label: 'Updates Channel', icon: Sparkles },
+    { id: 'appearance', label: 'Theme & Appearance', icon: Moon },
+    { id: 'monitoring', label: 'Telemetry Polling', icon: Activity },
+    { id: 'system', label: 'System Tray & Boot', icon: Layers },
+    { id: 'alerts', label: 'Alert Thresholds', icon: Bell },
+    { id: 'permissions', label: 'Privileges & Scope', icon: Shield },
+    { id: 'about', label: 'About SystemPilot', icon: Info },
   ];
 
   const showSection = (tabId) => activeTab === 'all' || activeTab === tabId;
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-4 animate-fadeIn pb-6">
+    <div className="w-full max-w-5xl mx-auto space-y-5 animate-fadeIn pb-12 text-slate-800 dark:text-slate-100">
       {/* Top Header & Save Status */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <SettingsIcon className="w-5 h-5 text-brand-500 dark:text-brand-400" />
-            Preferences & Configuration
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Customize system monitoring interval, system tray behavior, alert thresholds, and updates
-          </p>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 shadow-sm">
+              <SettingsIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                  Settings & Preferences
+                </h1>
+                <Badge variant="neutral" size="xs">
+                  v{currentVersion}
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Customize appearance, monitoring polling rate, background residency, alerts, and updates
+              </p>
+            </div>
+          </div>
         </div>
 
-        {savedMessage && (
-          <div className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-medium animate-fadeIn">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Settings saved successfully</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {savedMessage && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold animate-fadeIn">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Settings Saved</span>
+            </div>
+          )}
+
+          {/* Direct Update Trigger Button */}
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Sparkles}
+            onClick={() => {
+              openModal();
+              checkForUpdates({ isManual: true });
+            }}
+            className="text-xs shadow-sm"
+          >
+            Check for Updates
+          </Button>
+        </div>
       </div>
 
       {/* Category Filter Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200 dark:border-slate-800">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-150 ${
-              activeTab === tab.id
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-800'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-150 ${
+                isActive
+                  ? 'bg-brand-600 text-white shadow-sm font-semibold'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-850'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
+      {/* Settings Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* 1. UPDATES BOX (Prominent Card that opens Centered Modal on click) */}
         {showSection('updates') && (
-          <UpdatePanel
-            currentVersion={currentVersion}
-            formattedLastChecked={formattedLastChecked}
-            status={status}
-            latestRelease={latestRelease}
-            progress={progress}
-            error={error}
-            autoCheckEnabled={autoCheckEnabled}
-            setAutoCheck={setAutoCheck}
-            checkForUpdates={checkForUpdates}
-            downloadAndInstallUpdate={downloadAndInstallUpdate}
-            restartAndApplyUpdate={restartAndApplyUpdate}
-            openReleaseNotes={openReleaseNotes}
-            openModal={openModal}
-          />
+          <div
+            role="region"
+            aria-label="Application Updates"
+            className="lg:col-span-2"
+          >
+            <UpdatePanel
+              currentVersion={currentVersion}
+              formattedLastChecked={formattedLastChecked}
+              status={status}
+              latestRelease={latestRelease}
+              progress={progress}
+              error={error}
+              autoCheckEnabled={autoCheckEnabled}
+              setAutoCheck={setAutoCheck}
+              checkForUpdates={checkForUpdates}
+              downloadAndInstallUpdate={downloadAndInstallUpdate}
+              restartAndApplyUpdate={restartAndApplyUpdate}
+              openReleaseNotes={openReleaseNotes}
+              openModal={openModal}
+            />
+          </div>
         )}
 
-        {showSection('general') && (
+        {/* 2. THEME & APPEARANCE */}
+        {showSection('appearance') && (
           <SettingsAppearanceCard
             theme={theme}
             toggleTheme={toggleTheme}
+          />
+        )}
+
+        {/* 3. TELEMETRY REFRESH RATE */}
+        {showSection('monitoring') && (
+          <SettingsMonitoringCard
             refreshInterval={settings.refresh_interval_ms}
             onUpdateInterval={(val) => handleUpdate('refresh_interval_ms', val)}
           />
         )}
 
+        {/* 4. SYSTEM TRAY & BOOT */}
         {showSection('system') && (
           <SettingsSystemTrayCard
             settings={settings}
@@ -450,6 +667,7 @@ export function Settings({ theme, toggleTheme }) {
           />
         )}
 
+        {/* 5. PRIVILEGES & PERMISSIONS */}
         {showSection('permissions') && (
           <SettingsPrivilegeCard
             privilegeInfo={privilegeInfo}
@@ -458,6 +676,7 @@ export function Settings({ theme, toggleTheme }) {
           />
         )}
 
+        {/* 6. ALERTS & THRESHOLDS */}
         {showSection('alerts') && (
           <SettingsAlertsCard
             settings={settings}
@@ -465,6 +684,7 @@ export function Settings({ theme, toggleTheme }) {
           />
         )}
 
+        {/* 7. ABOUT & LEGAL */}
         {showSection('about') && (
           <SettingsAboutCard
             currentVersion={currentVersion}
@@ -475,3 +695,5 @@ export function Settings({ theme, toggleTheme }) {
     </div>
   );
 }
+
+export default Settings;

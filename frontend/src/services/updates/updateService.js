@@ -328,6 +328,7 @@ class UpdateService {
           lastChecked: now,
           isChecking: false,
           bannerVisible: false,
+          modalOpen: isManual || this.state.modalOpen,
           error: null,
         });
       }

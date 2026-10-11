@@ -33,7 +33,6 @@ export const NAVIGATION_ITEMS = [
   { id: 'cleanup', label: 'Cleanup', icon: Sparkles },
   { id: 'hardware', label: 'Hardware', icon: CircuitBoard },
   { id: 'bios', label: 'BIOS / UEFI', icon: CircuitBoard },
-  { id: 'system-control', label: 'System Control', icon: SlidersHorizontal, badge: 'Hub' },
   { id: 'security', label: 'Security', icon: ShieldCheck },
   { id: 'benchmark', label: 'Benchmark', icon: Timer },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },

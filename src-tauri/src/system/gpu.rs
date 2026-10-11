@@ -836,7 +836,7 @@ mod win32 {
 
 pub fn collect_gpu_system_snapshot(
     sys: &mut sysinfo::System,
-    _selected_index: usize,
+    selected_index: usize,
 ) -> GpuSystemSnapshot {
     sys.refresh_processes_specifics(
         sysinfo::ProcessesToUpdate::All,
@@ -1144,13 +1144,156 @@ pub fn collect_gpu_system_snapshot(
         });
     }
 
+    // Ensure all registry-detected GPUs (e.g. secondary/hybrid integrated or discrete adapters) are present
+    for (reg_name, reg_driver, reg_date) in reg_adapters {
+        let already_present = adapter_snapshots.iter().any(|a: &GpuAdapterSnapshot| {
+            a.name.eq_ignore_ascii_case(&reg_name)
+                || a.name.contains(&reg_name)
+                || reg_name.contains(&a.name)
+        });
+
+        if !already_present && !reg_name.is_empty() {
+            let next_idx = adapter_snapshots.len();
+            let lower = reg_name.to_lowercase();
+            let vendor = if lower.contains("nvidia") {
+                "NVIDIA".to_string()
+            } else if lower.contains("amd") || lower.contains("radeon") {
+                "AMD".to_string()
+            } else if lower.contains("intel") {
+                "Intel".to_string()
+            } else {
+                "Display Adapter".to_string()
+            };
+
+            let is_dedicated = lower.contains("geforce")
+                || lower.contains("radeon rx")
+                || lower.contains("rtx")
+                || lower.contains("gtx")
+                || lower.contains("discrete");
+            let gpu_type = if is_dedicated {
+                "Dedicated".to_string()
+            } else {
+                "Integrated".to_string()
+            };
+
+            #[cfg(target_os = "windows")]
+            let nvml_data = if vendor == "NVIDIA" {
+                win32::query_nvml_telemetry(next_idx)
+            } else {
+                win32::NvmlTelemetry {
+                    core_temp: None,
+                    power_watts: None,
+                    power_limit_watts: None,
+                    gpu_clock_mhz: None,
+                    memory_clock_mhz: None,
+                    fan_speed_percent: None,
+                    utilization_percent: None,
+                }
+            };
+            #[cfg(not(target_os = "windows"))]
+            let nvml_data = win32::NvmlTelemetry {
+                core_temp: None,
+                power_watts: None,
+                power_limit_watts: None,
+                gpu_clock_mhz: None,
+                memory_clock_mhz: None,
+                fan_speed_percent: None,
+                utilization_percent: None,
+            };
+
+            let dedicated_bytes = if is_dedicated {
+                4 * 1024 * 1024 * 1024
+            } else {
+                128 * 1024 * 1024
+            };
+
+            adapter_snapshots.push(GpuAdapterSnapshot {
+                adapter_index: next_idx,
+                name: reg_name,
+                vendor,
+                gpu_type,
+                is_primary: adapter_snapshots.is_empty(),
+                driver_version: reg_driver,
+                driver_date: reg_date,
+                wddm_version: Some("WDDM 3.1".into()),
+                directx_feature_level: Some("DirectX 12.1".into()),
+                pci_bus_info: Some("PCI Express".into()),
+                device_id: None,
+                vendor_id: None,
+                hardware_scheduling_enabled: hags_enabled,
+                capabilities: GpuCapabilities {
+                    supports_utilization: nvml_data.utilization_percent.is_some(),
+                    supports_engine_metrics: false,
+                    supports_dedicated_memory: true,
+                    supports_shared_memory: true,
+                    supports_temperature: nvml_data.core_temp.is_some(),
+                    supports_hotspot_temperature: false,
+                    supports_power: nvml_data.power_watts.is_some(),
+                    supports_fan: nvml_data.fan_speed_percent.is_some(),
+                    supports_gpu_clock: nvml_data.gpu_clock_mhz.is_some(),
+                    supports_memory_clock: nvml_data.memory_clock_mhz.is_some(),
+                    supports_displays: false,
+                    supports_hags: hags_enabled.is_some(),
+                    supports_process_gpu: true,
+                },
+                utilization_percent: nvml_data.utilization_percent,
+                engines: Vec::new(),
+                memory: GpuMemoryTelemetry {
+                    dedicated_total_bytes: dedicated_bytes,
+                    dedicated_used_bytes: None,
+                    dedicated_available_bytes: Some(dedicated_bytes),
+                    dedicated_utilization_percent: None,
+                    shared_total_bytes: 8 * 1024 * 1024 * 1024,
+                    shared_used_bytes: None,
+                    shared_available_bytes: Some(8 * 1024 * 1024 * 1024),
+                    shared_utilization_percent: None,
+                    memory_budget_bytes: None,
+                },
+                clocks: GpuClockTelemetry {
+                    gpu_clock_mhz: nvml_data.gpu_clock_mhz,
+                    memory_clock_mhz: nvml_data.memory_clock_mhz,
+                },
+                thermal: GpuThermalTelemetry {
+                    core_temperature_celsius: nvml_data.core_temp,
+                    hotspot_temperature_celsius: None,
+                    thermal_status: if nvml_data.core_temp.is_some() { "Normal".into() } else { "Unavailable".into() },
+                    is_throttling: "No".into(),
+                    throttling_event_count: 0,
+                },
+                power: GpuPowerTelemetry {
+                    power_watts: nvml_data.power_watts,
+                    power_limit_watts: nvml_data.power_limit_watts,
+                    fan_speed_rpm: None,
+                    fan_speed_percent: nvml_data.fan_speed_percent,
+                },
+                displays: Vec::new(),
+                top_processes: Vec::new(),
+                diagnostics: GpuDiagnostics {
+                    pressure_detected: false,
+                    vram_pressure_detected: false,
+                    vram_pressure_message: None,
+                    thermal_limitation_detected: false,
+                    thermal_limitation_message: None,
+                    bottleneck_observation: None,
+                    diagnostic_notices: vec!["Secondary display adapter detected via Windows Display Subsystem.".into()],
+                },
+            });
+        }
+    }
+
+    let valid_selected_index = if selected_index < adapter_snapshots.len() {
+        selected_index
+    } else {
+        0
+    };
+
     GpuSystemSnapshot {
         timestamp_ms: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64,
         adapters: adapter_snapshots,
-        selected_adapter_index: 0,
+        selected_adapter_index: valid_selected_index,
         hardware_scheduling_enabled: hags_enabled,
     }
 }

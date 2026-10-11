@@ -205,7 +205,7 @@ const TAB_RENDERERS = {
   hardware: ({ stats }) => <HardwareMonitor stats={stats} />,
   fans: ({ setActiveTab }) => <FanManagement setActiveTab={setActiveTab} />,
   bios: () => <BiosUefi />,
-  'system-control': () => <SystemControl />,
+  'system-control': () => <WindowsTools />,
   security: () => <SecurityCenter />,
   benchmark: () => <Benchmark />,
   settings: ({ theme, toggleTheme }) => <Settings theme={theme} toggleTheme={toggleTheme} />,

@@ -214,6 +214,144 @@ function DashboardHeroBanner({ stats, onCleanMemory, setActiveTab }) {
   );
 }
 
+function WindowsSystemCard({
+  windowsInfo,
+  stats,
+  compatReport,
+  setShowWinDetailsModal,
+  setShowCompatModal,
+}) {
+  const ratingBadge = compatReport?.overall_compatibility_rating?.replace('Profile', '')?.trim();
+
+  return (
+    <Card className="p-4 flex flex-col justify-between gap-3">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            Windows System & Environment
+          </span>
+          <div className="flex items-center gap-1.5">
+            {ratingBadge && (
+              <Badge variant="brand" size="xs">
+                {ratingBadge}
+              </Badge>
+            )}
+            <Badge variant="neutral" size="xs">
+              {windowsInfo?.architecture || 'x64'}
+            </Badge>
+          </div>
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+            {windowsInfo?.product_name || stats.os_name}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Edition: {windowsInfo?.edition || 'Professional'} • Version: {windowsInfo?.display_version || 'Current'}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+          <div>
+            <span className="text-slate-400 text-[11px]">OS Build</span>
+            <p className="font-mono font-medium text-slate-700 dark:text-slate-200">
+              {windowsInfo?.full_build || stats.os_version}
+            </p>
+          </div>
+          <div>
+            <span className="text-slate-400 text-[11px]">Device Form Factor</span>
+            <p className="font-medium text-slate-700 dark:text-slate-200 truncate">
+              {compatReport?.environment?.form_factor || 'Desktop / Portable'}
+            </p>
+          </div>
+          <div>
+            <span className="text-slate-400 text-[11px]">Manufacturer</span>
+            <p className="font-medium text-slate-700 dark:text-slate-200 truncate">
+              {windowsInfo?.manufacturer || 'System Manufacturer'}
+            </p>
+          </div>
+          <div>
+            <span className="text-slate-400 text-[11px]">System Type</span>
+            <p className="font-medium text-slate-700 dark:text-slate-200">
+              {windowsInfo?.system_type || 'x64-based PC'}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+        <Button
+          variant="secondary"
+          size="xs"
+          icon={ShieldCheck}
+          onClick={() => setShowCompatModal(true)}
+        >
+          Hardware Compatibility
+        </Button>
+        <Button
+          variant="secondary"
+          size="xs"
+          icon={Info}
+          onClick={() => setShowWinDetailsModal(true)}
+        >
+          Windows Details
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function WindowsActivationCard({ activationInfo, setShowActivationModal }) {
+  const isActivated = Boolean(activationInfo?.is_activated);
+
+  return (
+    <Card className="p-4 flex flex-col justify-between gap-3">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            Windows Activation
+          </span>
+          <Badge
+            variant={isActivated ? 'success' : 'neutral'}
+            size="xs"
+          >
+            {activationInfo?.status || 'Verified State'}
+          </Badge>
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+            {activationInfo?.status || 'Checking activation...'}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            License Channel: <span className="font-semibold text-slate-700 dark:text-slate-200">{activationInfo?.license_channel || 'Genuine Windows'}</span>
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+          <div>
+            <span className="text-slate-400 text-[11px]">Licensing Status</span>
+            <p className="font-medium text-emerald-600 dark:text-emerald-400">
+              {isActivated ? 'Genuine License Active' : 'Unlicensed / Grace'}
+            </p>
+          </div>
+          <div>
+            <span className="text-slate-400 text-[11px]">Last Checked</span>
+            <p className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
+              {activationInfo?.last_checked || 'Current session'}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+        <Button
+          variant="secondary"
+          size="xs"
+          icon={ShieldCheck}
+          onClick={() => setShowActivationModal(true)}
+        >
+          View Details
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function WindowsCardsRow({
   windowsInfo,
   stats,
@@ -225,127 +363,97 @@ function WindowsCardsRow({
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Windows Information Card */}
-      <Card className="p-4 flex flex-col justify-between gap-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Windows System & Environment
-            </span>
-            <div className="flex items-center gap-1.5">
-              {compatReport?.overall_compatibility_rating && (
-                <Badge variant="brand" size="xs">
-                  {compatReport.overall_compatibility_rating.replace('Profile', '').trim()}
-                </Badge>
-              )}
-              <Badge variant="neutral" size="xs">
-                {windowsInfo?.architecture || 'x64'}
-              </Badge>
-            </div>
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
-              {windowsInfo?.product_name || stats.os_name}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Edition: {windowsInfo?.edition || 'Professional'} • Version: {windowsInfo?.display_version || 'Current'}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
-            <div>
-              <span className="text-slate-400 text-[11px]">OS Build</span>
-              <p className="font-mono font-medium text-slate-700 dark:text-slate-200">
-                {windowsInfo?.full_build || stats.os_version}
-              </p>
-            </div>
-            <div>
-              <span className="text-slate-400 text-[11px]">Device Form Factor</span>
-              <p className="font-medium text-slate-700 dark:text-slate-200 truncate">
-                {compatReport?.environment?.form_factor || 'Desktop / Portable'}
-              </p>
-            </div>
-            <div>
-              <span className="text-slate-400 text-[11px]">Manufacturer</span>
-              <p className="font-medium text-slate-700 dark:text-slate-200 truncate">
-                {windowsInfo?.manufacturer || 'System Manufacturer'}
-              </p>
-            </div>
-            <div>
-              <span className="text-slate-400 text-[11px]">System Type</span>
-              <p className="font-medium text-slate-700 dark:text-slate-200">
-                {windowsInfo?.system_type || 'x64-based PC'}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
-          <Button
-            variant="secondary"
-            size="xs"
-            icon={ShieldCheck}
-            onClick={() => setShowCompatModal(true)}
-          >
-            Hardware Compatibility
-          </Button>
-          <Button
-            variant="secondary"
-            size="xs"
-            icon={Info}
-            onClick={() => setShowWinDetailsModal(true)}
-          >
-            Windows Details
-          </Button>
-        </div>
-      </Card>
+      <WindowsSystemCard
+        windowsInfo={windowsInfo}
+        stats={stats}
+        compatReport={compatReport}
+        setShowWinDetailsModal={setShowWinDetailsModal}
+        setShowCompatModal={setShowCompatModal}
+      />
+      <WindowsActivationCard
+        activationInfo={activationInfo}
+        setShowActivationModal={setShowActivationModal}
+      />
+    </div>
+  );
+}
 
-      {/* Windows Activation Card */}
-      <Card className="p-4 flex flex-col justify-between gap-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Windows Activation
-            </span>
-            <Badge
-              variant={activationInfo?.is_activated ? 'success' : 'neutral'}
-              size="xs"
+function formatCoolingTemperature(rawTemp) {
+  if (rawTemp === null || rawTemp === undefined) return 'Unavailable';
+  return `${Number(rawTemp).toFixed(1)} °C`;
+}
+
+function formatFanSpeed(rpm, percent, fallback = 'Firmware Managed') {
+  if (rpm !== null && rpm !== undefined) {
+    if (rpm === 0) return '0 RPM (Silent)';
+    const pctStr = percent != null ? ` (${Math.round(percent)}%)` : '';
+    return `${rpm.toLocaleString()} RPM${pctStr}`;
+  }
+  if (percent !== null && percent !== undefined) {
+    return `${Math.round(percent)}%`;
+  }
+  return fallback;
+}
+
+function FanSensorsGrid({ coolingData, cpuTemp, gpuTemp, cpuFanRpm, gpuFanRpm }) {
+  const cpuFanSpin = (coolingData?.cpu_fan_rpm || 0) > 0;
+  const gpuFanSpin = (coolingData?.gpu_fan_rpm || 0) > 0;
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
+      <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+        <span className="text-[10px] text-slate-400 uppercase font-semibold">CPU Temp</span>
+        <p className="font-mono font-bold text-slate-700 dark:text-slate-200 mt-0.5">
+          {cpuTemp}
+        </p>
+      </div>
+      <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+        <span className="text-[10px] text-slate-400 uppercase font-semibold">GPU Temp</span>
+        <p className="font-mono font-bold text-slate-700 dark:text-slate-200 mt-0.5">
+          {gpuTemp}
+        </p>
+      </div>
+      <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+        <span className="text-[10px] text-slate-400 uppercase font-semibold flex items-center gap-1">
+          <Wind className={`w-3 h-3 text-cyan-500 ${cpuFanSpin ? 'animate-spin' : ''}`} style={{ animationDuration: '3s' }} />
+          CPU Fan
+        </span>
+        <p className="font-mono font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 truncate">
+          {cpuFanRpm}
+        </p>
+      </div>
+      <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+        <span className="text-[10px] text-slate-400 uppercase font-semibold flex items-center gap-1">
+          <Wind className={`w-3 h-3 text-cyan-500 ${gpuFanSpin ? 'animate-spin' : ''}`} style={{ animationDuration: '3s' }} />
+          GPU Fan
+        </span>
+        <p className="font-mono font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 truncate">
+          {gpuFanRpm}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function DetectedTachometersList({ fans }) {
+  return (
+    <div className="space-y-1">
+      <span className="text-[10px] text-slate-400 uppercase font-semibold">Detected Tachometers:</span>
+      <div className="flex flex-wrap gap-1.5">
+        {fans.map((fan) => {
+          const rpmText = formatFanSpeed(fan.current_rpm, fan.current_percent, fan.status || 'Unavailable');
+          const isSpinning = (fan.current_rpm || 0) > 0;
+          return (
+            <span
+              key={fan.id}
+              className="px-2 py-0.5 rounded bg-slate-100 dark:bg-surface-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1"
             >
-              {activationInfo?.status || 'Verified State'}
-            </Badge>
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
-              {activationInfo?.status || 'Checking activation...'}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              License Channel: <span className="font-semibold text-slate-700 dark:text-slate-200">{activationInfo?.license_channel || 'Genuine Windows'}</span>
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
-            <div>
-              <span className="text-slate-400 text-[11px]">Licensing Status</span>
-              <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                {activationInfo?.is_activated ? 'Genuine License Active' : 'Unlicensed / Grace'}
-              </p>
-            </div>
-            <div>
-              <span className="text-slate-400 text-[11px]">Last Checked</span>
-              <p className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                {activationInfo?.last_checked || 'Current session'}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-          <Button
-            variant="secondary"
-            size="xs"
-            icon={ShieldCheck}
-            onClick={() => setShowActivationModal(true)}
-          >
-            View Details
-          </Button>
-        </div>
-      </Card>
+              <Wind className={`w-2.5 h-2.5 text-cyan-500/80 ${isSpinning ? 'animate-spin' : ''}`} style={{ animationDuration: '3s' }} />
+              <span className="font-semibold text-slate-700 dark:text-slate-200">{fan.name}:</span> {rpmText}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -374,30 +482,16 @@ function FanCoolingDashboardCard({ setActiveTab }) {
   }, []);
 
   const rawCpuTemp = coolingData?.cpu_temp_celsius ?? coolingData?.cpu_temperature_c;
-  const cpuTemp = rawCpuTemp !== null && rawCpuTemp !== undefined
-    ? `${Number(rawCpuTemp).toFixed(1)} °C`
-    : 'Unavailable';
+  const cpuTemp = formatCoolingTemperature(rawCpuTemp);
 
   const rawGpuTemp = coolingData?.gpu_temp_celsius ?? coolingData?.gpu_temperature_c;
-  const gpuTemp = rawGpuTemp !== null && rawGpuTemp !== undefined
-    ? `${Number(rawGpuTemp).toFixed(1)} °C`
-    : 'Unavailable';
+  const gpuTemp = formatCoolingTemperature(rawGpuTemp);
 
-  const cpuFanRpm = coolingData?.cpu_fan_rpm !== null && coolingData?.cpu_fan_rpm !== undefined
-    ? `${coolingData.cpu_fan_rpm} RPM`
-    : 'Firmware Managed';
-
-  const gpuFanRpm = coolingData?.gpu_fan_rpm !== null && coolingData?.gpu_fan_rpm !== undefined
-    ? `${coolingData.gpu_fan_rpm} RPM`
-    : (coolingData?.gpu_fan_percent !== null && coolingData?.gpu_fan_percent !== undefined
-        ? `${Math.round(coolingData.gpu_fan_percent)}%`
-        : 'Firmware Managed');
+  const cpuFanRpm = formatFanSpeed(coolingData?.cpu_fan_rpm, coolingData?.cpu_fan_percent);
+  const gpuFanRpm = formatFanSpeed(coolingData?.gpu_fan_rpm, coolingData?.gpu_fan_percent);
 
   const capabilityLabel = coolingData?.control_capability || coolingData?.fan_control_capability || 'Read-only';
-  const capabilityBadgeVariant = capabilityLabel === 'Controllable'
-    ? 'success'
-    : 'neutral';
-
+  const capabilityBadgeVariant = capabilityLabel === 'Controllable' ? 'success' : 'neutral';
   const warnings = coolingData?.warnings || (coolingData?.thermal_warning ? [coolingData.thermal_warning] : []);
 
   return (
@@ -431,48 +525,17 @@ function FanCoolingDashboardCard({ setActiveTab }) {
         )}
 
         {/* Sensor readings grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">CPU Temp</span>
-            <p className="font-mono font-bold text-slate-700 dark:text-slate-200 mt-0.5">
-              {cpuTemp}
-            </p>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">GPU Temp</span>
-            <p className="font-mono font-bold text-slate-700 dark:text-slate-200 mt-0.5">
-              {gpuTemp}
-            </p>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">CPU Fan</span>
-            <p className="font-mono font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">
-              {cpuFanRpm}
-            </p>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">GPU Fan</span>
-            <p className="font-mono font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">
-              {gpuFanRpm}
-            </p>
-          </div>
-        </div>
+        <FanSensorsGrid
+          coolingData={coolingData}
+          cpuTemp={cpuTemp}
+          gpuTemp={gpuTemp}
+          cpuFanRpm={cpuFanRpm}
+          gpuFanRpm={gpuFanRpm}
+        />
 
         {/* Extra fans if detected */}
         {coolingData?.fans && coolingData.fans.length > 0 && (
-          <div className="space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Detected Tachometers:</span>
-            <div className="flex flex-wrap gap-1.5">
-              {coolingData.fans.map((fan) => (
-                <span
-                  key={fan.id}
-                  className="px-2 py-0.5 rounded bg-slate-100 dark:bg-surface-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                >
-                  {fan.name}: {fan.current_rpm !== null && fan.current_rpm !== undefined ? `${fan.current_rpm} RPM` : (fan.status || 'Unavailable')}
-                </span>
-              ))}
-            </div>
-          </div>
+          <DetectedTachometersList fans={coolingData.fans} />
         )}
 
         <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
@@ -566,7 +629,7 @@ function PrimaryGaugesRow({ stats, setActiveTab, gpuList = [] }) {
 
           return (
             <Card
-              key={gpu.name ? `${gpu.name}-${index}` : index}
+              key={gpu.device_id || `${gpu.name || 'gpu'}-${gpu.vendor || ''}-${gpu.driver_version || ''}-${gpu.dedicated_memory_bytes || 0}-${gpu.is_primary ? 'p' : 's'}`}
               hover
               onClick={() => setActiveTab('gpu')}
               className="flex flex-col items-center cursor-pointer"

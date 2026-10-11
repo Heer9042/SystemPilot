@@ -1,7 +1,7 @@
 {
   "name": "systempilot-frontend",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "author": "SystemPilot Contributors",
   "type": "module",
@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node ../scripts/test_version.js"
+    "test": "node ../scripts/test.js"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

@@ -2,7 +2,7 @@
 
 # =============================================================================
 # SystemPilot — Professional NSIS Installer Hooks
-# Version: 0.0.1
+# Version: 0.0.2
 # =============================================================================
 # Included by Tauri's generated installer.nsi via the `installerHooks`
 # configuration key. This file is inserted at the TOP of installer.nsi
@@ -127,7 +127,7 @@ Var SP_AutoStart        ; "1" if user wants startup with Windows, "0" otherwise
 
   # ── 7. Application metadata in registry ───────────────────────────────────
   WriteRegStr SHCTX "Software\SystemPilot" "InstallLocation" "$INSTDIR"
-  WriteRegStr SHCTX "Software\SystemPilot" "Version"         "0.0.1"
+  WriteRegStr SHCTX "Software\SystemPilot" "Version"         "0.0.2"
   WriteRegStr SHCTX "Software\SystemPilot" "Publisher"       "SystemPilot Contributors"
   WriteRegStr SHCTX "Software\SystemPilot" "InstallMode"     "$MultiUser.InstallMode"
   WriteRegStr SHCTX "Software\SystemPilot" "InstalledExe"    "$0"
