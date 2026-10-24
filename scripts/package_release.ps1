@@ -25,6 +25,11 @@ Copy-Item "src-tauri/target/release/systempilot.exe" "$stagingDir/SystemPilot.ex
 if (Test-Path "src-tauri/target/release/WebView2Loader.dll") {
     Copy-Item "src-tauri/target/release/WebView2Loader.dll" "$stagingDir/WebView2Loader.dll" -Force
 }
+foreach ($dll in @("libwinpthread-1.dll", "libgcc_s_seh-1.dll")) {
+    if (Test-Path "src-tauri/target/release/$dll") {
+        Copy-Item "src-tauri/target/release/$dll" "$stagingDir/$dll" -Force
+    }
+}
 if (Test-Path "src-tauri/resources/systempilot.exe.manifest") {
     Copy-Item "src-tauri/resources/systempilot.exe.manifest" "$stagingDir/SystemPilot.exe.manifest" -Force
     Copy-Item "src-tauri/resources/systempilot.exe.manifest" "$stagingDir/systempilot.exe.manifest" -Force
@@ -56,10 +61,21 @@ try {
 
 # Copy installers and binaries to release
 Copy-Item "src-tauri/target/release/systempilot.exe" "release/SystemPilot.exe" -Force
-Copy-Item "src-tauri/target/release/bundle/nsis/*.exe" "release/SystemPilot-Setup.exe" -Force
-Copy-Item "src-tauri/target/release/bundle/msi/*.msi" "release/SystemPilot.msi" -Force
+$nsisInstaller = Get-ChildItem -Path "src-tauri/target/release/bundle/nsis/*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($nsisInstaller) {
+    Copy-Item $nsisInstaller.FullName "release/SystemPilot-Setup.exe" -Force
+}
+$msiInstaller = Get-ChildItem -Path "src-tauri/target/release/bundle/msi/*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($msiInstaller) {
+    Copy-Item $msiInstaller.FullName "release/SystemPilot.msi" -Force
+}
 if (Test-Path "src-tauri/target/release/WebView2Loader.dll") {
     Copy-Item "src-tauri/target/release/WebView2Loader.dll" "release/WebView2Loader.dll" -Force
+}
+foreach ($dll in @("libwinpthread-1.dll", "libgcc_s_seh-1.dll")) {
+    if (Test-Path "src-tauri/target/release/$dll") {
+        Copy-Item "src-tauri/target/release/$dll" "release/$dll" -Force
+    }
 }
 if (Test-Path "src-tauri/resources/systempilot.exe.manifest") {
     Copy-Item "src-tauri/resources/systempilot.exe.manifest" "release/SystemPilot.exe.manifest" -Force
@@ -83,7 +99,7 @@ if (Test-Path $signScript) {
 }
 
 Write-Host "Calculating SHA-256 Checksums..."
-$validFiles = @("SystemPilot.exe", "SystemPilot-Setup.exe", "SystemPilot.msi", "SystemPilot-Portable.zip", "WebView2Loader.dll", "SystemPilot.exe.manifest")
+$validFiles = @("SystemPilot.exe", "SystemPilot-Setup.exe", "SystemPilot.msi", "SystemPilot-Portable.zip", "WebView2Loader.dll", "libwinpthread-1.dll", "libgcc_s_seh-1.dll", "SystemPilot.exe.manifest")
 $checksumLines = @()
 $setupHash = ""
 foreach ($name in $validFiles) {

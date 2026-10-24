@@ -63,9 +63,11 @@
         "sidebarImage": "windows/sidebar.bmp"
       },
       "wix": {
-        "language": [
-          "en-US"
-        ]
+        "language": {
+          "en-US": {
+            "localePath": "windows/WixUI_en-us.wxl"
+          }
+        }
       }
     }
   }

@@ -21,6 +21,11 @@ if exist "%LOCALAPPDATA%\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.U
     set "PATH=%LOCALAPPDATA%\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\mingw64\bin;%PATH%"
 )
 if exist "%~dp0scripts\bin" (
+    if not exist "%~dp0scripts\bin\signtool.exe" (
+        if exist "%~dp0scripts\bin\signtool.rs" (
+            rustc -O "%~dp0scripts\bin\signtool.rs" -o "%~dp0scripts\bin\signtool.exe" >nul 2>nul
+        )
+    )
     set "PATH=%~dp0scripts\bin;%PATH%"
     set "TAURI_WINDOWS_SIGNTOOL_PATH=%~dp0scripts\bin\signtool.exe"
 )
@@ -49,7 +54,19 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-echo [OK] Node.js and Rust detected.
+:: Automatically use GNU toolchain if MSVC linker (link.exe) is not installed
+where link.exe >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    where gcc.exe >nul 2>nul
+    if %ERRORLEVEL% equ 0 (
+        set "RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-gnu"
+        echo [OK] Node.js and Rust detected - using MinGW GNU toolchain.
+    ) else (
+        echo [OK] Node.js and Rust detected.
+    )
+) else (
+    echo [OK] Node.js and Rust detected - using MSVC toolchain.
+)
 echo.
 
 echo [2/3] Compiling Application (Frontend + Tauri 2 Backend)...

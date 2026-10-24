@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -17,8 +17,15 @@ if (process.platform === 'win32') {
 
   const binDir = path.join(rootDir, 'scripts', 'bin');
   if (fs.existsSync(binDir)) {
+    const signtoolExe = path.join(binDir, 'signtool.exe');
+    const signtoolRs = path.join(binDir, 'signtool.rs');
+    if (!fs.existsSync(signtoolExe) && fs.existsSync(signtoolRs)) {
+      try {
+        execSync(`rustc -O "${signtoolRs}" -o "${signtoolExe}"`, { stdio: 'ignore' });
+      } catch (_) {}
+    }
     process.env.PATH = `${binDir};${process.env.PATH}`;
-    process.env.TAURI_WINDOWS_SIGNTOOL_PATH = path.join(binDir, 'signtool.exe');
+    process.env.TAURI_WINDOWS_SIGNTOOL_PATH = signtoolExe;
   }
 
   const nsisDir = path.join(localAppData, 'electron-builder', 'Cache', 'nsis', 'nsis-3.0.4.1');
@@ -58,6 +65,15 @@ if (process.platform === 'win32') {
           fs.copyFileSync(webviewSrc, webviewDst);
         } catch (_) {}
       }
+    }
+  }
+
+  // Automatically fallback to GNU toolchain if MSVC link.exe is not available
+  if (!process.env.RUSTUP_TOOLCHAIN) {
+    try {
+      execSync('where link.exe', { stdio: 'ignore' });
+    } catch (_) {
+      process.env.RUSTUP_TOOLCHAIN = 'stable-x86_64-pc-windows-gnu';
     }
   }
 }

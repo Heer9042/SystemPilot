@@ -26,7 +26,28 @@ $mingwPath = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.
 if (Test-Path $mingwPath) {
     $env:PATH = "$mingwPath;$env:PATH"
 }
+$binDir = Join-Path $scriptRoot "bin"
+if (Test-Path $binDir) {
+    $signtoolExe = Join-Path $binDir "signtool.exe"
+    $signtoolRs = Join-Path $binDir "signtool.rs"
+    if (-not (Test-Path $signtoolExe) -and (Test-Path $signtoolRs)) {
+        & rustc -O $signtoolRs -o $signtoolExe 2>$null
+    }
+    $env:PATH = "$binDir;$env:PATH"
+    $env:TAURI_WINDOWS_SIGNTOOL_PATH = $signtoolExe
+}
+$nsisDir = "$env:LOCALAPPDATA\electron-builder\Cache\nsis\nsis-3.0.4.1"
+if (Test-Path $nsisDir) {
+    $env:PATH = "$nsisDir;$env:PATH"
+}
 $env:RUST_MIN_STACK = "16777216"
+
+# If MSVC linker is not available, ensure GNU toolchain is selected
+if (-not (Get-Command link.exe -ErrorAction SilentlyContinue)) {
+    if (Get-Command gcc.exe -ErrorAction SilentlyContinue) {
+        $env:RUSTUP_TOOLCHAIN = "stable-x86_64-pc-windows-gnu"
+    }
+}
 
 Write-Host "Compiling SystemPilot desktop application..." -ForegroundColor Yellow
 if ($Debug) {
